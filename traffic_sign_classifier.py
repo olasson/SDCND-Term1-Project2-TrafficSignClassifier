@@ -6,7 +6,7 @@ def main():
 
     # ---------- Command line arguments ---------- #
 
-    parser = argparse.ArgumentParser(description = 'Detect Lane Lines')
+    parser = argparse.ArgumentParser(description = 'Traffic Sign Classifier')
 
     parser.add_argument(
         '--show_images',
