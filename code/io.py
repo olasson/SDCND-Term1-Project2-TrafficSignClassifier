@@ -1,6 +1,52 @@
-def data_load_pickled():
-    pass
+import matplotlib.image as mpimg
+import numpy as np
+import pickle
 
-def data_save_pickled():
-    pass
+def data_load_pickled(path):
+    """
+    Load contents of a pickled file into memory
+    
+    Inputs
+    ----------
+    path : string
+        Path to the pickled file
+        
+    Outputs
+    -------
+    images: numpy.ndarray
+        Array containing the set of images
+    labels: numpy.ndarray
+        Array containing images labels
+    """
 
+    with open(path, mode = 'rb') as f:
+        data = pickle.load(f)
+
+    images = data['features']
+    labels = data['labels']
+
+    return images, labels
+
+
+def data_save_pickled(path, images, labels):
+    """
+    Save data as a pickled file
+    
+    Inputs
+    ----------
+    path : string
+        Path to where pickled file will be stored
+    images : numpy.ndarray
+        A set of images
+    labels: numpy.ndarray
+        A set of image labels
+        
+    Outputs
+    -------
+        A pickled file located at 'path'
+    """
+
+    data = {'features': images, 'labels': labels} 
+
+    with open(path, mode = 'wb') as f:   
+        pickle.dump(data, f, protocol = pickle.HIGHEST_PROTOCOL)
