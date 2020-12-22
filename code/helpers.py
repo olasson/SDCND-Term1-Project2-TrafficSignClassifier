@@ -26,7 +26,7 @@ def data_pick_subset(data, indices):
 
     return subset
 
-def images_pick_subset(images, labels = None, labels_metadata = None, indices = None, n_samples = 25):
+def images_pick_subset(images, labels = None, labels_metadata = None, indices = None, n_images_max = 25):
     """
     Pick a subset of images
     
@@ -38,17 +38,25 @@ def images_pick_subset(images, labels = None, labels_metadata = None, indices = 
         A set of image classes
     labels_metadata: (None | numpy.ndarray)
         A set of metadata about image classes
-    indices: (None | numpy.ndarray)
+    n_images_max: int
+        The maximum number of images allowed in 'images_subset'
+
         
     Outputs
     -------
-    plt.figure
-        Figure showing 'images' in an (n_rows x n_cols) layout
+    images_subset : numpy.ndarray
+        A subset of 'images'
+    labels_subset: (None | numpy.ndarray)
+        A subset of 'labels'
+    labels_metadata_subset: (None | numpy.ndarray)
+        A subset of 'labels_metadata'
     
     """
 
+    n_images = len(images)
+
     if indices is None:
-        indices = np.random.randint(0, len(images), min(len(images), n_samples))
+        indices = np.random.randint(0, n_images, min(n_images, n_images_max))
 
     images_subset = data_pick_subset(images, indices)
 
