@@ -1,8 +1,14 @@
 from code.io import data_load_pickled, data_save_pickled
 
-
+import numpy as np
 import argparse
-import os
+
+from os.path import exists as file_exists
+
+
+TRAIN = 0
+VALID = 1
+TEST = 2
 
 
 def main():
@@ -48,6 +54,24 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # ---------- Pack arguments ---------- #
+
+    data_paths = np.array([args.data_train, args.data_valid, args.data_test])
+
+    flag_show_images = args.show_images
+    flag_random = args.random
+
+    # ---------- Show data ---------- #
+
+    if flag_show_images:
+
+        for data_path in data_paths:
+            if file_exists(data_path):
+                print("Loading data set:", data_path, "...")
+                X, y = data_load_pickled(data_path)
+
+
 
 
 main()
