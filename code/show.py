@@ -48,7 +48,7 @@ def show_images(images, titles_top = None, titles_bottom = None, fig_size = (15,
         return
 
     n_cols = int(min(n_images, n_cols_max))
-    n_rows = int(np.ceil(n_images / n_cols))MAX_NUMBER_OF_IMAGES
+    n_rows = int(np.ceil(n_images / n_cols))
 
     plt.figure(figsize = fig_size)
 
