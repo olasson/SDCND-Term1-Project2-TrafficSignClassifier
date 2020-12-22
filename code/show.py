@@ -3,7 +3,7 @@ import numpy as np
 
 MAX_NUMBER_OF_IMAGES = 50
 
-def show_images(images, titles_top = None, titles_bottom = None, fig_size = (15, 15), font_size = 10, cmap = None, 
+def show_images(images, titles_top = None, titles_bottom = None, fig_size = (15, 15), font_size = 10, cmap = None, title_window = '0',
                 n_cols_max = 5, titles_bottom_h_align = 'center', titles_bottom_v_align = 'top', titles_bottom_pos = (16, 34)):
     """
     Show a set of images
@@ -50,7 +50,7 @@ def show_images(images, titles_top = None, titles_bottom = None, fig_size = (15,
     n_cols = int(min(n_images, n_cols_max))
     n_rows = int(np.ceil(n_images / n_cols))
 
-    plt.figure(figsize = fig_size)
+    plt.figure(title_window, figsize = fig_size)
 
 
     for i in range(n_images):
