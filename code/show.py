@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Prevent an user from showing too many images
+# Prevent a user from showing too many images
 N_SHOW_IMAGES_MAX = 50 
 
 def show_images(images, titles_top = None, titles_bottom = None, title_fig_window = None, fig_size = (15, 15), font_size = 10, cmap = None, 
