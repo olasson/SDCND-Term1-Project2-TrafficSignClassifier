@@ -134,8 +134,7 @@ def main():
     # Distributions
 
     if flag_show_distributions:
-        show_label_distributions(y_train, y_test, y_valid, y_metadata)
-        #show_label_distributions([y_train, y_test, y_valid], y_metadata, order_index = 2)
+        show_label_distributions([y_train, y_test, y_valid], y_metadata)
 
 
 
