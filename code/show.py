@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-MAX_NUMBER_OF_IMAGES = 50
+# Prevent an user from showing too many images
+N_SHOW_IMAGES_MAX = 50 
 
-def show_images(images, titles_top = None, titles_bottom = None, fig_size = (15, 15), font_size = 10, cmap = None, title_window = '0',
-                n_cols_max = 5, titles_bottom_h_align = 'center', titles_bottom_v_align = 'top', titles_bottom_pos = (16, 34)):
+def show_images(images, titles_top = None, titles_bottom = None, title_fig_window = None, fig_size = (15, 15), font_size = 10, cmap = None, 
+                n_cols_max = 5, titles_bottom_h_align = 'center', titles_bottom_v_align = 'top', titles_bottom_pos = (16, 32)):
     """
     Show a set of images
     
@@ -16,6 +17,8 @@ def show_images(images, titles_top = None, titles_bottom = None, fig_size = (15,
         A set of image titles to be displayed on top of an image
     titles_bottom: (None | list)
         A set of image titles to be displayed at the bottom of an image
+    title_fig_window: (None | string)
+        A single title for the figure window
     figsize: (int, int)
         Tuple specifying figure width and height in inches
     fontsize: int
@@ -43,14 +46,14 @@ def show_images(images, titles_top = None, titles_bottom = None, fig_size = (15,
 
     n_images = len(images)
 
-    if n_images > MAX_NUMBER_OF_IMAGES:
-        print("ERROR: code.show.show_images(): You're trying to show", n_images, "images. Max number of allowed images is", MAX_NUMBER_OF_IMAGES)
+    if n_images > N_SHOW_IMAGES_MAX:
+        print("ERROR: code.show.show_images(): You're trying to show", n_images, "images. Max number of allowed images is", N_SHOW_IMAGES_MAX)
         return
 
     n_cols = int(min(n_images, n_cols_max))
     n_rows = int(np.ceil(n_images / n_cols))
 
-    plt.figure(title_window, figsize = fig_size)
+    plt.figure(title_fig_window, figsize = fig_size)
 
 
     for i in range(n_images):
