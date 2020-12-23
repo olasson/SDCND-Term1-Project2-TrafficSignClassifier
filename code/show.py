@@ -80,85 +80,42 @@ def show_images(images, titles_top = None, titles_bottom = None, title_fig_windo
     plt.show()
 
 
-def show_label_distributions(labels, labels_opt1 = None, labels_opt2 = None, labels_metadata = None, order = None, title = None, fig_size = (15, 10), font_size = 6):
+def show_label_distributions(distributions, labels_metadata = None, order_index = 0, title = None, fig_size = (15, 10), font_size = 6):
     """
     Show label distribution
-
+    
     Inputs
     ----------
-    labels_1: numpy.ndarray
-        A set of image classes
-    labels_opt1: (None | numpy.ndarray)
-        An optional set of image classes, for comparison
-    labels_opt2: (None | numpy.ndarray)
-        An optional set of image classes, for comparison
-    labels_metadata: (None | numpy.ndarray)
-        Label metadata
-    order: (None | string)
-        Determines which set of labels determines the ordering of classes on the y-axis 
+    distributions: list
+        A list of one or more label sets -- [labels1, labels2,...labelsN]
+    labels_metadata: (numpy.ndarray | None)
+        Labels metadata
+    title: string
+        Title for the histogram plot
     figsize: (int, int)
         Tuple specifying figure width and height in inches
     fontsize: int
-        Integer specifying the fontsize of text in the figure
+        Integer specifying the fontsize of 'yticks'
         
     Outputs
     -------
     plt.figure
         Figure showing label class distribution(s)
-
+    
     """
-
-
-    # Choose which label set determines the ordering of classes on the y-axis
-    if order == 'opt1' and (labels_opt1 is not None):
-        labels_order = labels_opt1
-    elif order == 'opt2' and (labels_opt2 is not None):
-        labels_order = labels_opt2
-    else:
-        labels_order = labels
 
     # ---------- Set the desired class order---------- #
 
-    classes, classes_count_order = np.unique(labels_order, return_counts = True)
+    classes, classes_count_order = np.unique(distributions[order_index], return_counts = True)
 
     # Ensure that the order of classes fits a reverse sort of 'classes_count_order'
-    # 'classes_order' determines the order of classes on the y-axis
+    # 'classes_1' determines the order of classes on the y-axis
     classes_order = [tmp for _,tmp in sorted(zip(classes_count_order, classes), reverse  = True)]
 
     # Perform a reverse sort of 'classes_order'
     classes_count_order = sorted(classes_count_order, reverse = True)
 
-
-    # ---------- Display Required labels ---------- #
-
-    _, classes_count = np.unique(labels, return_counts = True)
-
-    # Ensure that the order of follows 'classes_order'
-    classes_count = data_pick_subset(classes_count, classes_order)
-
-    plt.barh(classes, classes_count)
-
-
-    # ---------- Display Optional labels ---------- #
-
-    if labels_opt1 is not None:
-        _, classes_count = np.unique(labels_opt1, return_counts = True)
-
-        # Ensure that the order of follows 'classes_order'
-        classes_count = data_pick_subset(classes_count, classes_order)
-
-        plt.barh(classes, classes_count)        
-
-
-    if labels_opt2 is not None:
-        _, classes_count = np.unique(labels_opt2, return_counts = True)
-
-        # Ensure that the order of follows 'classes_order'
-        classes_count = data_pick_subset(classes_count, classes_order)
-
-        plt.barh(classes, classes_count) 
-
-    # ---------- Display 'y_ticks' ---------- #
+    # ---------- Prepare 'y_ticks' ---------- #
 
     y_ticks = []
     for class_i in classes_order:
@@ -167,14 +124,20 @@ def show_label_distributions(labels, labels_opt1 = None, labels_opt2 = None, lab
         else:
             y_ticks.append(class_i)
 
+    for distribution in distributions:
+        if distribution is not None:
+            _, classes_count = np.unique(distribution, return_counts = True)
+
+            classes_count = data_pick_subset(classes_count, classes_order)
+
+            plt.barh(classes, classes_count)
 
     plt.yticks(classes, y_ticks, fontsize = font_size)
 
-    # ---------- Final tweaks ---------- # 
-
-    plt.xlabel("Number of each class", fontsize = font_size + 14)
+    plt.xlabel("Number of each class", fontsize = 20)
 
     if labels_metadata is None:
-        plt.ylabel("Class ID", fontsize = font_size + 14)
+        plt.ylabel("Class ID", fontsize = 20)
 
     plt.show()
+
