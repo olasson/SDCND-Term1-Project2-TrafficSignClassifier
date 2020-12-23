@@ -76,12 +76,14 @@ def main():
 
     n_images_max = args.show_n_images_max
 
+    try:
+        y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
+    except FileNotFoundError:
+        print("Metadata not found!")
+        y_metadata = None
 
     # ---------- Load data requested by user ---------- #
-
-    y_metadata = None
-    if file_exists(PATH_METADATA):
-        y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
+        
 
     if file_exists(path_train):
         print("Loading training data...")
