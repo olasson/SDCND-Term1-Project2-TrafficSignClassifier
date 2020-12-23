@@ -1,6 +1,6 @@
 from code.io import data_load_pickled, data_save_pickled
 from code.helpers import images_pick_subset
-from code.show import show_images
+from code.show import show_images, show_label_distributions
 
 from pandas import read_csv
 import numpy as np
@@ -48,10 +48,8 @@ def main():
 
     parser.add_argument(
         '--show_images',
-        type = str,
-        nargs = '+',
-        default = '',
-        help = 'Specify which datasets will be visualized. Permitted values: [' + SHOW_TRAIN + ', ' + SHOW_VALID + ', ' + SHOW_TEST +']. All other values are ignored.'
+        action = 'store_true',
+        help = 'Shows images from all datasets provided.'
     )
 
     parser.add_argument(
@@ -62,6 +60,12 @@ def main():
         help = 'The maximum number of images that can be shown.'
     )
 
+    parser.add_argument(
+        '--show_distributions',
+        action = 'store_true',
+        help = 'Shows class distributions from all datasets provided.'
+    )
+
     args = parser.parse_args()
 
     # ---------- Setup ---------- #
@@ -70,9 +74,8 @@ def main():
     path_valid = args.data_valid
     path_test = args.data_test
 
-    flag_show_train = SHOW_TRAIN in args.show_images
-    flag_show_valid = SHOW_VALID in args.show_images
-    flag_show_test = SHOW_TEST in args.show_images
+    flag_show_images = args.show_images
+    flag_show_distributions = args.show_distributions
 
     n_images_max = args.show_n_images_max
 
@@ -82,37 +85,57 @@ def main():
         print("Metadata not found!")
         y_metadata = None
 
+    
+
     # ---------- Load data requested by user ---------- #
         
-
     if file_exists(path_train):
         print("Loading training data...")
         X_train, y_train = data_load_pickled(path_train)
+    else:
+        X_train = None
+        y_train = None
 
     if file_exists(path_valid):
         print("Loading validation data...")
         X_valid, y_valid = data_load_pickled(path_valid)
+    else:
+        X_valid = None
+        y_valid = None
 
     if file_exists(path_test):
         print("Loading testing data")
         X_test, y_test = data_load_pickled(path_test)
+    else:
+        X_test = None
+        y_test = None
 
-    # ---------- Show data ---------- #
+    # ---------- Visualize data ---------- #
 
-    if flag_show_train and file_exists(path_train):
-        # Too many images to show them all, pick a subset
-        X_sub, y_sub, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = n_images_max)
-        show_images(X_sub, y_metadata_sub, title_fig_window = path_train)
+    # Images
 
-    if flag_show_valid and file_exists(path_valid):
-        # Too many images to show them all, pick a subset
-        X_sub, y_sub, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = n_images_max)
-        show_images(X_sub, y_metadata_sub, title_fig_window = path_valid)
+    if flag_show_images:
 
-    if flag_show_test and file_exists(path_test):
-        # Too many images to show them all, pick a subset
-        X_sub, y_sub, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = n_images_max)
-        show_images(X_sub, y_metadata_sub, title_fig_window = path_test)
+        if file_exists(path_train):
+            # Too many images to show them all, pick a subset
+            X_sub, y_sub, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = n_images_max)
+            show_images(X_sub, y_metadata_sub, title_fig_window = path_train)
+
+        if file_exists(path_valid):
+            # Too many images to show them all, pick a subset
+            X_sub, y_sub, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = n_images_max)
+            show_images(X_sub, y_metadata_sub, title_fig_window = path_valid)
+
+        if file_exists(path_test):
+            # Too many images to show them all, pick a subset
+            X_sub, y_sub, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = n_images_max)
+            show_images(X_sub, y_metadata_sub, title_fig_window = path_test)
+
+    # Distributions
+
+    if flag_show_distributions:
+        show_label_distributions(y_train, y_test, y_valid, y_metadata)
+        #show_label_distributions([y_train, y_test, y_valid], y_metadata, order_index = 2)
 
 
 
