@@ -66,7 +66,7 @@ def images_pick_subset(images, labels = None, labels_metadata = None, indices = 
 
     labels_metadata_subset = None
     if (labels is not None) and (labels_metadata is not None):
-        labels_metadata_subset = data_pick_subset(labels_metadata, labels)
+        labels_metadata_subset = data_pick_subset(labels_metadata, labels_subset)
 
     return images_subset, labels_subset, labels_metadata_subset
 
