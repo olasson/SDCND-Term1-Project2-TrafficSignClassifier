@@ -8,10 +8,12 @@ import argparse
 
 from os.path import exists as file_exists
 
+PATH_METADATA = 'signnames.csv'
+KEY_METADATA = 'SignName'
 
-TRAIN = 0
-VALID = 1
-TEST = 2
+SHOW_TRAIN = 'train'
+SHOW_VALID = 'valid'
+SHOW_TEST = 'test'
 
 
 def main():
@@ -46,46 +48,71 @@ def main():
 
     parser.add_argument(
         '--show_images',
-        action = 'store_true',
-        help = 'Show a set of images.'
+        type = str,
+        nargs = '+',
+        default = '',
+        help = 'Specify which datasets will be visualized. Permitted values: [' + SHOW_TRAIN + ', ' + SHOW_VALID + ', ' + SHOW_TEST +']. All other values are ignored.'
     )
 
     parser.add_argument(
-        '--show_images_max',
+        '--show_n_images_max',
         type = int,
+        nargs = '?',
         default = 25,
-        help = 'Maximum number of images displayed.'
+        help = 'The maximum number of images that can be shown.'
     )
 
     args = parser.parse_args()
 
     # ---------- Setup ---------- #
 
-    data_paths = np.array([args.data_train, args.data_valid, args.data_test])
+    path_train = args.data_train
+    path_valid = args.data_valid
+    path_test = args.data_test
 
-    flag_show_images = args.show_images
+    flag_show_train = SHOW_TRAIN in args.show_images
+    flag_show_valid = SHOW_VALID in args.show_images
+    flag_show_test = SHOW_TEST in args.show_images
 
-    n_images_max = args.show_images_max
+    n_images_max = args.show_n_images_max
 
-    try:
-        y_metadata = read_csv('signnames.csv')['SignName']
-    except FileNotFoundError:
-        y_metadata = None
-        print("No metadata file found!")
+
+    # ---------- Load data requested by user ---------- #
+
+    y_metadata = None
+    if file_exists(PATH_METADATA):
+        y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
+
+    if file_exists(path_train):
+        print("Loading training data...")
+        X_train, y_train = data_load_pickled(path_train)
+
+    if file_exists(path_valid):
+        print("Loading validation data...")
+        X_valid, y_valid = data_load_pickled(path_valid)
+
+    if file_exists(path_test):
+        print("Loading testing data")
+        X_test, y_test = data_load_pickled(path_test)
 
     # ---------- Show data ---------- #
 
-    if flag_show_images:
+    if flag_show_train and file_exists(path_train):
+        # Too many images to show them all, pick a subset
+        X_sub, y_sub, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = n_images_max)
+        show_images(X_sub, y_metadata_sub, title_fig_window = path_train)
 
-        for data_path in data_paths:
-            if file_exists(data_path):
-                
-                X, y = data_load_pickled(data_path)
+    if flag_show_valid and file_exists(path_valid):
+        # Too many images to show them all, pick a subset
+        X_sub, y_sub, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = n_images_max)
+        show_images(X_sub, y_metadata_sub, title_fig_window = path_valid)
 
-                # Pick out a subset of images if 'len(X) > n_images_max'
-                X_sub, y_sub, y_metadata_sub = images_pick_subset(X, y, y_metadata, n_images_max = n_images_max)
+    if flag_show_test and file_exists(path_test):
+        # Too many images to show them all, pick a subset
+        X_sub, y_sub, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = n_images_max)
+        show_images(X_sub, y_metadata_sub, title_fig_window = path_test)
 
-                show_images(X_sub, y_sub, y_metadata_sub, title_window = data_path)
+
 
 
 
