@@ -1,3 +1,6 @@
+
+from code.helpers import data_pick_subset
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -74,4 +77,104 @@ def show_images(images, titles_top = None, titles_bottom = None, title_fig_windo
                      fontsize = font_size - 3)
 
     plt.tight_layout()
+    plt.show()
+
+
+def show_label_distributions(labels, labels_opt1 = None, labels_opt2 = None, labels_metadata = None, order = None, title = None, fig_size = (15, 10), font_size = 6):
+    """
+    Show label distribution
+
+    Inputs
+    ----------
+    labels_1: numpy.ndarray
+        A set of image classes
+    labels_opt1: (None | numpy.ndarray)
+        An optional set of image classes, for comparison
+    labels_opt2: (None | numpy.ndarray)
+        An optional set of image classes, for comparison
+    labels_metadata: (None | numpy.ndarray)
+        Label metadata
+    order: (None | string)
+        Determines which set of labels determines the ordering of classes on the y-axis 
+    figsize: (int, int)
+        Tuple specifying figure width and height in inches
+    fontsize: int
+        Integer specifying the fontsize of text in the figure
+        
+    Outputs
+    -------
+    plt.figure
+        Figure showing label class distribution(s)
+
+    """
+
+
+    # Choose which label set determines the ordering of classes on the y-axis
+    if order == 'opt1' and (labels_opt1 is not None):
+        labels_order = labels_opt1
+    elif order == 'opt2' and (labels_opt2 is not None):
+        labels_order = labels_opt2
+    else:
+        labels_order = labels
+
+    # ---------- Set the desired class order---------- #
+
+    classes, classes_count_order = np.unique(labels_order, return_counts = True)
+
+    # Ensure that the order of classes fits a reverse sort of 'classes_count_order'
+    # 'classes_order' determines the order of classes on the y-axis
+    classes_order = [tmp for _,tmp in sorted(zip(classes_count_order, classes), reverse  = True)]
+
+    # Perform a reverse sort of 'classes_order'
+    classes_count_order = sorted(classes_count_order, reverse = True)
+
+
+    # ---------- Display Required labels ---------- #
+
+    _, classes_count = np.unique(labels, return_counts = True)
+
+    # Ensure that the order of follows 'classes_order'
+    classes_count = data_pick_subset(classes_count, classes_order)
+
+    plt.barh(classes, classes_count)
+
+
+    # ---------- Display Optional labels ---------- #
+
+    if labels_opt1 is not None:
+        _, classes_count = np.unique(labels_opt1, return_counts = True)
+
+        # Ensure that the order of follows 'classes_order'
+        classes_count = data_pick_subset(classes_count, classes_order)
+
+        plt.barh(classes, classes_count)        
+
+
+    if labels_opt2 is not None:
+        _, classes_count = np.unique(labels_opt2, return_counts = True)
+
+        # Ensure that the order of follows 'classes_order'
+        classes_count = data_pick_subset(classes_count, classes_order)
+
+        plt.barh(classes, classes_count) 
+
+    # ---------- Display 'y_ticks' ---------- #
+
+    y_ticks = []
+    for class_i in classes_order:
+        if labels_metadata is not None:
+            y_ticks.append(labels_metadata[class_i])
+        else:
+            y_ticks.append(class_i)
+
+
+    plt.yticks(classes, y_ticks, fontsize = font_size)
+
+    # ---------- Final tweaks ---------- # 
+
+    plt.xlabel("Number of each class", fontsize = font_size + 14)
+
+    if labels_metadata is None:
+        plt.ylabel("Class ID", fontsize = font_size + 14)
+
     plt.show()
