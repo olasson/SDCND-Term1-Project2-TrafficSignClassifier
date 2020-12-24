@@ -203,11 +203,15 @@ def main():
 
     # Prepare training data
 
-        if flag_mirroring:
-            print("MIRRORING")
+        if (X_train is not None) and (y_train is not None):
+            if flag_mirroring:
+                print("Mirroring data...")
+                X_train, y_train = augment_data_by_mirroring(X_train, y_train, MIRROR_MAP)
 
-        if flag_random_transform:
-            print("RAND TRANSFORMS")
+            if flag_random_transform:
+                print("Applying random transforms...")
+        else:
+            print("Training data not provided, skipping!")
 
 
     # Pre-processing
