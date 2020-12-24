@@ -9,6 +9,8 @@ import numpy as np
 import argparse
 
 from os.path import exists as file_exists
+from os.path import isdir as folder_exists
+from os import mkdir
 
 
 # Metadata info
@@ -23,6 +25,9 @@ PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 
 # Permitted options for --prepare command
 DATA_PREPARATION_OPTIONS = ['mirroring', 'rand_tf', 'hist_eq']
+
+#Permitted options for --order command
+DISTRIBUTION_ORDER_OPTIONS = ['train', 'test', 'valid']
 
 # Mapping where "Class i" is mirrored to imitate "Class MIRROR_MAP[i]"
 # Used by the --prepare command
@@ -91,10 +96,10 @@ def main():
     )
 
     parser.add_argument(
-        '--order_index',
-        type = int,
+        '--order',
+        type = str,
         nargs = '?',
-        default = 0,
+        default = 'train',
         help = 'Determines which distribution will be used to set the class order on the y-axis.'
     )
 
@@ -108,6 +113,13 @@ def main():
 
     args = parser.parse_args()
 
+    # ---------- Init ---------- #
+
+    flag_prepare = False
+    flag_mirroring = True
+    flag_random_transform = True
+    flag_histogram_equalization = True
+
     # ---------- Setup ---------- #
 
     path_train = args.data_train
@@ -117,6 +129,20 @@ def main():
     flag_show_images = args.show_images
     flag_show_distributions = args.show_distributions
 
+    if args.order == DISTRIBUTION_ORDER_OPTIONS[0]:
+        order_index = 0
+    elif args.order == DISTRIBUTION_ORDER_OPTIONS[1]:
+        order_index = 1
+    elif args.order == DISTRIBUTION_ORDER_OPTIONS[2]:
+        order_index = 2
+    else:
+        print("ERROR: main(): Setup:", args.order, "is an invalid option for --order!")
+        return
+
+    n_images_max = args.n_images_max
+
+    title = args.title
+
     if args.prepare is not None:
 
         flag_prepare = True
@@ -125,28 +151,13 @@ def main():
             flag_mirroring = DATA_PREPARATION_OPTIONS[0] in args.prepare
             flag_random_transform = DATA_PREPARATION_OPTIONS[1] in args.prepare
             flag_histogram_equalization = DATA_PREPARATION_OPTIONS[2] in args.prepare
-        else: 
-            flag_mirroring = True
-            flag_random_transform = True
-            flag_histogram_equalization = True
 
-    else:
-        flag_prepare = False
-
-
-    n_images_max = args.n_images_max
-
-    order_index = args.order_index
-
-    title_distributions = args.title
-
+    # Metadata
     try:
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
     except FileNotFoundError:
         print("Metadata not found!")
         y_metadata = None
-
-    
 
     # ---------- Load data requested by user ---------- #
         
@@ -195,7 +206,7 @@ def main():
     # Distributions
 
     if flag_show_distributions:
-        show_label_distributions([y_train, y_test, y_valid], y_metadata, title = title_distributions, order_index = order_index)
+        show_label_distributions([y_train, y_test, y_valid], y_metadata, order_index = order_index)
 
 
     # ---------- Prepare data ---------- #
@@ -204,6 +215,7 @@ def main():
     # Prepare training data
 
         if (X_train is not None) and (y_train is not None):
+
             if flag_mirroring:
                 print("Mirroring data...")
                 X_train, y_train = augment_data_by_mirroring(X_train, y_train, MIRROR_MAP)
@@ -211,17 +223,41 @@ def main():
             if flag_random_transform:
                 print("Applying random transform...")
                 X_train, y_train = augment_data_by_random_transform(X_train, y_train)
+
+            if flag_histogram_equalization:
+                pass
         else:
-            print("Training data not provided, skipping!")
+            print("Training data not provided, skipping preparation!")
 
+        if (X_valid is not None) and (y_valid is not None):
 
-    # Pre-processing
+            if flag_histogram_equalization:
+                pass
 
-        if flag_histogram_equalization:
-            print("HIST EQ")
+            # TODO: Grayscale
 
+            # TODO: Normalization
 
+            # TODO: Newaxis
 
+            # TODO: Save data
+        else:
+            print("Validation data not provided, skipping preparation!")
+
+        if (X_test is not None) and (y_test is not None):
+
+            if flag_histogram_equalization:
+                pass
+
+            # TODO: Grayscale
+
+            # TODO: Normalization
+
+            # TODO: Newaxis
+
+            # TODO: Save data
+        else:
+            print("Testing data not provided, skipping preparation!")
 
 
 main()
