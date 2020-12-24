@@ -1,4 +1,4 @@
-from code.prepare import augment_data_by_mirroring
+from code.augment import augment_data_by_mirroring, augment_data_by_random_transform
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
 from code.helpers import images_pick_subset
