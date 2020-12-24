@@ -1,6 +1,10 @@
 import numpy as np
 import cv2
 
+# ---------- Constand for random transforms ---------- #
+BORDER_PAD = 10
+
+
 # ---------- Data augmentation ---------- #
 
 # Mirroring
@@ -61,3 +65,44 @@ def augment_data_by_mirroring(images, labels, mirror_map, n_new_images_max = 100
     augmented_labels = np.concatenate((labels, additional_labels), axis = 0)
 
     return augmented_images, augmented_labels
+
+# Random transforms
+
+def scale_image(image, scale_x, scale_y):
+    """
+    Scale image scene
+    
+    Inputs
+    ----------
+    image : numpy.ndarray
+        Array containing a single RGB image
+    scale_x,scale_y: float, float
+        Scale coefficients in the x-dir and y-dir
+    border_pad: int
+        Padding used to ensure image size preservation
+        
+    Outputs
+    -------
+    scaled_image: numpy.ndarray
+        Scaled image, dimensions preserved
+        
+    """
+
+    n_rows, n_cols, _ = image.shape
+
+    width = int(n_cols * scale_x)
+    height = int(n_rows * scale_y)
+
+    image = cv2.resize(image, (width, height))
+
+    image = cv2.copyMakeBorder(image, BORDER_PAD, BORDER_PAD, 
+                                      BORDER_PAD, BORDER_PAD, cv2.BORDER_REPLICATE)
+
+    n_rows_new, n_cols_new, _ = image.shape
+
+    row_diff = round((n_rows_new - n_rows) / 2)
+    col_diff = round((n_cols_new - n_cols) / 2)  
+
+    scaled_image = image[row_diff:n_rows + row_diff, col_diff:n_cols + col_diff]
+
+    return scaled_image
