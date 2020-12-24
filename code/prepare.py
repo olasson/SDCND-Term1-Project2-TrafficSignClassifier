@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-# ---------- Constand for random transforms ---------- #
+# ---------- Constants ---------- #
 BORDER_PAD = 10
 
 
@@ -78,8 +78,6 @@ def scale_image(image, scale_x, scale_y):
         Array containing a single RGB image
     scale_x,scale_y: float, float
         Scale coefficients in the x-dir and y-dir
-    border_pad: int
-        Padding used to ensure image size preservation
         
     Outputs
     -------
@@ -106,3 +104,68 @@ def scale_image(image, scale_x, scale_y):
     scaled_image = image[row_diff:n_rows + row_diff, col_diff:n_cols + col_diff]
 
     return scaled_image
+
+def translate_image(image, T_x, T_y):
+    """
+    Translate image scene
+    
+    Inputs
+    ----------
+    image : numpy.ndarray
+        Array containing a single RGB image
+    T_x,T_y: int, int
+        Translation in the x-dir and y-dir
+       
+    Outputs
+    -------
+    translated_image: numpy.ndarray
+        Translated image, dimensions preserved
+        
+    """
+
+    image = cv2.copyMakeBorder(image, BORDER_PAD, BORDER_PAD, 
+                                      BORDER_PAD, BORDER_PAD, cv2.BORDER_REPLICATE)
+
+    n_rows, n_cols, _ = image.shape
+
+    T_matrix = np.float32([[1, 0, T_x],[0, 1, T_y]])
+    image = cv2.warpAffine(image, T_matrix, (n_cols, n_rows))
+
+    translated_image = image[BORDER_PAD:n_rows - BORDER_PAD, BORDER_PAD:n_cols - BORDER_PAD]
+
+    return translated_image
+
+def perspective_transform(image, border_offset):
+    """
+    Apply perspective transform to image scene
+    
+    Inputs
+    ----------
+    image : numpy.ndarray
+        Array containing a single RGB image
+    border_offset: int
+        How far away from the border 'src_pts' are found
+
+    Outputs
+    -------
+    perspective_image: numpy.ndarray
+        Image with changed perspective, dimensions preserved
+        
+    """  
+    
+    image = cv2.copyMakeBorder(image, BORDER_PAD, BORDER_PAD, 
+                                      BORDER_PAD, BORDER_PAD, cv2.BORDER_REPLICATE)
+    n_rows, n_cols, _ = image.shape
+    
+    src_pts = np.float32([[border_offset, border_offset], # Top left
+                          [n_cols - border_offset, border_offset], # Top right
+                          [border_offset, n_rows - border_offset], # Bottom left
+                          [n_cols - border_offset, n_rows - border_offset]]) # Bottom right
+    dst_pts = np.float32([[0, 0],[n_cols, 0],[0, n_rows],[n_cols, n_rows]])
+    
+    P_matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
+    image = cv2.warpPerspective(image, P_matrix , (n_rows, n_cols))
+    
+    perspective_image = image[BORDER_PAD:n_rows - BORDER_PAD, BORDER_PAD:n_cols - BORDER_PAD]
+    
+    return perspective_image
