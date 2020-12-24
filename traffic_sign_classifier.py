@@ -53,7 +53,7 @@ def main():
     )
 
     parser.add_argument(
-        '--show_n_images_max',
+        '--n_images_max',
         type = int,
         nargs = '?',
         default = 25,
@@ -77,7 +77,7 @@ def main():
     flag_show_images = args.show_images
     flag_show_distributions = args.show_distributions
 
-    n_images_max = args.show_n_images_max
+    n_images_max = args.n_images_max
 
     try:
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
