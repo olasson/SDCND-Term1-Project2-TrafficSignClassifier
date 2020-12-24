@@ -11,10 +11,6 @@ from os.path import exists as file_exists
 PATH_METADATA = 'signnames.csv'
 KEY_METADATA = 'SignName'
 
-SHOW_TRAIN = 'train'
-SHOW_VALID = 'valid'
-SHOW_TEST = 'test'
-
 
 def main():
 
@@ -66,6 +62,24 @@ def main():
         help = 'Shows class distributions from all datasets provided.'
     )
 
+    parser.add_argument(
+        '--title',
+        type = str,
+        nargs = '?',
+        default = '',
+        help = 'Title for distribution plot'
+    )
+
+    parser.add_argument(
+        '--order_index',
+        type = int,
+        nargs = '?',
+        default = 0,
+        help = 'Determines which distribution will be used to set the class order on the y-axis.'
+    )
+
+
+
     args = parser.parse_args()
 
     # ---------- Setup ---------- #
@@ -78,6 +92,10 @@ def main():
     flag_show_distributions = args.show_distributions
 
     n_images_max = args.n_images_max
+
+    order_index = args.order_index
+
+    title_distributions = args.title
 
     try:
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
@@ -134,7 +152,7 @@ def main():
     # Distributions
 
     if flag_show_distributions:
-        show_label_distributions([y_train, y_test, y_valid], y_metadata)
+        show_label_distributions([y_train, y_test, y_valid], y_metadata, title = title_distributions, order_index = order_index)
 
 
 
