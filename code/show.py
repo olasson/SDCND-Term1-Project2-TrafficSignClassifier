@@ -21,7 +21,7 @@ def show_images(images, titles_top = None, titles_bottom = None, title_fig_windo
     titles_bottom: (None | list)
         A set of image titles to be displayed at the bottom of an image
     title_fig_window: (None | string)
-        A single title for the figure window
+        Title for the figure window
     figsize: (int, int)
         Tuple specifying figure width and height in inches
     fontsize: int
@@ -80,7 +80,7 @@ def show_images(images, titles_top = None, titles_bottom = None, title_fig_windo
     plt.show()
 
 
-def show_label_distributions(distributions, labels_metadata = None, order_index = 0, title = None, fig_size = (15, 10), font_size = 6):
+def show_label_distributions(distributions, labels_metadata = None, order_index = 0, title = None, title_fig_window = None, fig_size = (15, 10), font_size = 6):
     """
     Show label distribution
     
@@ -90,12 +90,16 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
         A list of one or more label sets -- [labels1, labels2,...labelsN]
     labels_metadata: (numpy.ndarray | None)
         Labels metadata
+    order_index: int
+        Determines which distribution will be used to set the class order on the y-axis 
     title: string
         Title for the histogram plot
+    title_fig_window: (None | string)
+        Title for the figure window
     figsize: (int, int)
         Tuple specifying figure width and height in inches
     fontsize: int
-        Integer specifying the fontsize of 'yticks'
+        Integer determining the font size of text in the figure
         
     Outputs
     -------
@@ -124,20 +128,25 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
         else:
             y_ticks.append(class_i)
 
+    plt.figure(title_fig_window, figsize = fig_size)
+
     for distribution in distributions:
         if distribution is not None:
             _, classes_count = np.unique(distribution, return_counts = True)
 
+            # Fit the class order of 'distribution' to the desired class order
             classes_count = data_pick_subset(classes_count, classes_order)
 
             plt.barh(classes, classes_count)
 
     plt.yticks(classes, y_ticks, fontsize = font_size)
 
-    plt.xlabel("Number of each class", fontsize = 20)
+    plt.xlabel("Number of each class", fontsize = font_size + 14)
+
+    plt.title(title, fontsize = font_size + 20)
 
     if labels_metadata is None:
-        plt.ylabel("Class ID", fontsize = 20)
+        plt.ylabel("Class ID", fontsize = font_size + 14)
 
     plt.show()
 
