@@ -161,8 +161,6 @@ def perspective_transform(image, border_offset):
     ----------
     image : numpy.ndarray
         Array containing a single RGB image
-    border_offset: int
-        How far away from the border 'src_pts' are found
 
     Outputs
     -------
@@ -260,3 +258,52 @@ def random_transforms(image, mask = None):
         image = rotate_image(image, angle)
 
     return image
+
+def augment_data_by_random_transform(images, labels):
+    """
+    Augment a data set by creating new samples from random transforms
+    
+    Inputs
+    ----------
+    images : numpy.ndarray
+        A set of images
+    labels: numpy.ndarray
+        A set of image classes
+        
+    Outputs
+    -------
+    augmented_images: numpy.ndarray
+        A set of images with additional samples
+    augmented_labels: numpy.ndarray
+        A set of classes with updated count for each class
+
+    """
+    
+    classes, classes_count = np.unique(labels, return_counts = True)
+    
+    # Number of new images that will be added to any class
+    target_count = np.max(classes_count)
+    
+    additional_images = []
+    additional_labels = []
+    
+    for class_i in classes:
+        
+        class_count = classes_count[class_i]
+        class_images_indices = np.where(labels == class_i)[0]
+        
+        diff_count = target_count - class_count
+        if diff_count < target_count:
+            
+            # Pick out a subset of class_image_indices with length 'diff_count'
+            indices_subset = np.random.choice(class_images_indices, 
+                                              diff_count, replace = diff_count > class_count)
+            
+            for index in indices_subset:
+                additional_images.append(random_transforms(images[index]))
+                additional_labels.append(class_i)
+    
+    augmented_images = np.concatenate((images, additional_images), axis = 0)
+    augmented_labels = np.concatenate((labels, additional_labels), axis = 0)
+    
+    return augmented_images, augmented_labels
