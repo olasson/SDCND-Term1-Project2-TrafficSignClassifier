@@ -2,7 +2,25 @@ import numpy as np
 import cv2
 
 # ---------- Constants ---------- #
+
+# Padding used to ensure image size preservation
 BORDER_PAD = 10
+
+# Min/max for scale_image()
+MIN_SCALE = 0.75
+MAX_SCALE = 1.25
+
+# Min/max for translate_image()
+MIN_T = -4
+MAX_T = 4
+
+# Min/max for perspective_transform()
+MIN_BORDER_OFFSET = -3
+MAX_BORDER_OFFSET = 3
+
+# Min/max for rotate_image()
+MIN_ANGLE = -15
+MAX_ANGLE = 15
 
 
 # ---------- Data augmentation ---------- #
@@ -169,3 +187,76 @@ def perspective_transform(image, border_offset):
     perspective_image = image[BORDER_PAD:n_rows - BORDER_PAD, BORDER_PAD:n_cols - BORDER_PAD]
     
     return perspective_image
+
+def rotate_image(image, angle):
+    """
+    Rotate image scene
+    
+    Inputs
+    ----------
+    image : numpy.ndarray
+        Numpy array containing a single RGB image
+    angle: int
+        Angle of rotation for image in degrees
+        
+    Outputs
+    -------
+    rotated_image: numpy.ndarray
+        Rotated image, dimensions preserved
+        
+    """
+    
+    image = cv2.copyMakeBorder(image, BORDER_PAD, BORDER_PAD, 
+                                      BORDER_PAD, BORDER_PAD, cv2.BORDER_REPLICATE)
+    n_rows, n_cols, _ = image.shape
+    
+    R_matrix = cv2.getRotationMatrix2D((n_rows / 2, n_cols / 2), angle, 1)
+    image = cv2.warpAffine(image, R_matrix, (n_cols, n_rows))
+    
+    rotated_image = image[BORDER_PAD:n_rows - BORDER_PAD, BORDER_PAD:n_cols - BORDER_PAD]
+    
+    return rotated_image
+
+def random_transforms(image, mask = None):
+    """
+    Apply one or more random transformation(s) to an image
+    
+    Inputs
+    ----------
+    image : numpy.ndarray
+        Array containing a single RGB image
+    mask: (None | numpy.ndarray)
+        Array with shape '(1,4)' for choosing transform(s). Useful for debugging.
+
+    Outputs
+    -------
+    image: numpy.ndarray
+        Transformed image, dmensions preserved
+        
+    """ 
+
+    if mask is None:
+        mask = np.random.randint(0, 2, [1, 4])[0]
+
+    if np.sum(mask) == 0:
+        mask[np.random.randint(4)] == 1
+
+    if mask[0] == 1:
+        scale_fx = np.random.uniform(MIN_SCALE, MAX_SCALE)
+        scale_fy = np.random.uniform(MIN_SCALE, MAX_SCALE)        
+        image = scale_image(image, scale_fx, scale_fy)
+
+    if mask[1] == 1:
+        T_x = np.random.randint(MIN_T, MAX_T) 
+        T_y = np.random.randint(MIN_T, MAX_T)
+        image = translate_image(image, T_x, T_y)
+
+    if mask[2] == 1:
+        border_offset = np.random.uniform(MIN_BORDER_OFFSET, MAX_BORDER_OFFSET)
+        image = perspective_transform(image, border_offset)
+
+    if mask[3] == 1:
+        angle = np.random.uniform(MIN_ANGLE, MAX_ANGLE)
+        image = rotate_image(image, angle)
+
+    return image
