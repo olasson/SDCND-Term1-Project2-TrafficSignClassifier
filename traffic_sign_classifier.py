@@ -209,7 +209,8 @@ def main():
                 X_train, y_train = augment_data_by_mirroring(X_train, y_train, MIRROR_MAP)
 
             if flag_random_transform:
-                print("Applying random transforms...")
+                print("Applying random transform...")
+                X_train, y_train = augment_data_by_random_transform(X_train, y_train)
         else:
             print("Training data not provided, skipping!")
 
