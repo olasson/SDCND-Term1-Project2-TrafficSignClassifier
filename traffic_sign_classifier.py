@@ -102,6 +102,13 @@ def main():
         help = 'Prepares data for use by a model. Optional: provide augmentation options for the training set.'
     )
 
+    parser.add_argument(
+        '--force_save',
+        type = bool,
+        nargs = '?',
+        default = False,
+        help = 'If true, existing prepared data will be overwritten.'
+    )
 
     args = parser.parse_args()
     
@@ -167,6 +174,7 @@ def main():
             flag_mirroring = 'mirroring' in args.prepare
             flag_random_transform = 'rand_tf'in args.prepare
 
+    flag_force_save = args.force_save
 
     # Metadata
 
@@ -176,6 +184,10 @@ def main():
         print("Metadata not found!")
         y_metadata = None
 
+    # Create folder(s)
+
+    if not folder_exists(PATH_PREPARED_FOLDER):
+        mkdir(PATH_PREPARED_FOLDER)
 
     # ---------- Load data requested by user ---------- #
         
@@ -228,64 +240,96 @@ def main():
 
 
     # ---------- Prepare data ---------- #
+
     if flag_prepare:
 
-    # Prepare training data
+        # ---------- Prepare Training data ---------- #
 
         if (X_train is not None) and (y_train is not None):
 
-            # Agumentation
+            if (not file_exists(PATH_PREPARED_TRAIN)) or flag_force_save:
 
-            if flag_mirroring:
-                print("Mirroring training data...")
-                X_train, y_train = augment_data_by_mirroring(X_train, y_train, MIRROR_MAP)
+                # Agumentation
 
-            if flag_random_transform:
-                print("Applying random transforms to training data...")
-                X_train, y_train = augment_data_by_random_transform(X_train, y_train)
+                if flag_mirroring:
+                    print("Mirroring training data...")
+                    X_train, y_train = augment_data_by_mirroring(X_train, y_train, MIRROR_MAP)
 
-            # Pre-processing
+                if flag_random_transform:
+                    print("Applying random transforms to training data...")
+                    X_train, y_train = augment_data_by_random_transform(X_train, y_train)
 
-            print("Pre-processing training data...")
+                # Pre-processing
 
-            X_train = histogram_equalization(X_train)
+                print("Pre-processing training data...")
 
-            X_train = grayscale(X_train)
+                X_train = histogram_equalization(X_train)
 
-            X_train = normalize_images(X_train, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+                X_train = grayscale(X_train)
 
-            X_train = X_train[..., np.newaxis]
+                X_train = normalize_images(X_train, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+
+                X_train = X_train[..., np.newaxis]
+
+                print("Saving training data...")
+
+                data_save_pickled(PATH_PREPARED_TRAIN, X_train, y_train)
+
+            else:
+                print("Training data exists, skipping!")
 
         else:
             print("Training data not provided, skipping preparation!")
 
+        # ---------- Prepare Validation data ---------- #
+
         if (X_valid is not None) and (y_valid is not None):
 
-            print("Pre-processing validation data...")
+            if (not file_exists(PATH_PREPARED_VALID)) or flag_force_save:
 
-            X_valid = histogram_equalization(X_valid)
+                print("Pre-processing validation data...")
 
-            X_valid = grayscale(X_valid)
+                X_valid = histogram_equalization(X_valid)
 
-            X_valid = normalize_images(X_valid, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+                X_valid = grayscale(X_valid)
 
-            X_valid = X_valid[..., np.newaxis]
+                X_valid = normalize_images(X_valid, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+
+                X_valid = X_valid[..., np.newaxis]
+
+                print("Saving validation data...")
+
+                data_save_pickled(PATH_PREPARED_VALID, X_valid, y_valid)
+
+            else:
+                print("Validation data exists, skipping!")
 
         else:
             print("Validation data not provided, skipping preparation!")
 
+        # ---------- Prepare Testing data ---------- #
+
         if (X_test is not None) and (y_test is not None):
 
-            print("Pre-processing validation data...")
+            if (not file_exists(PATH_PREPARED_TEST)) or flag_force_save:
 
-            X_test = histogram_equalization(X_test)
+                print("Pre-processing validation data...")
 
-            X_test = grayscale(X_test)
+                X_test = histogram_equalization(X_test)
 
-            X_test = normalize_images(X_test, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+                X_test = grayscale(X_test)
 
-            X_test = X_test[..., np.newaxis]
-            
+                X_test = normalize_images(X_test, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+
+                X_test = X_test[..., np.newaxis]
+
+                print("Saving testing data...")
+
+                data_save_pickled(PATH_PREPARED_TEST, X_test, y_test)
+
+            else:
+                print("Validation data exists, skipping!")
+
         else:
             print("Testing data not provided, skipping preparation!")
 
