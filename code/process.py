@@ -77,4 +77,4 @@ def normalize_images(images, a, b, image_min, image_max):
 
     normalized_images = np.asarray(normalized_images)
     
-    return normalized_image
+    return normalized_images
