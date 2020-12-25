@@ -23,12 +23,6 @@ PATH_PREPARED_TRAIN = PATH_PREPARED_FOLDER + 'prepared_train.p'
 PATH_PREPARED_VALID = PATH_PREPARED_FOLDER + 'prepared_valid.p'
 PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 
-# Permitted options for --prepare command
-DATA_PREPARATION_OPTIONS = ['mirroring', 'rand_tf', 'hist_eq']
-
-#Permitted options for --order command
-DISTRIBUTION_ORDER_OPTIONS = ['train', 'test', 'valid']
-
 # Mapping where "Class i" is mirrored to imitate "Class MIRROR_MAP[i]"
 # Used by the --prepare command
 MIRROR_MAP = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -42,6 +36,7 @@ def main():
     # ---------- Command line arguments ---------- #
 
     parser = argparse.ArgumentParser(description = 'Traffic Sign Classifier')
+    sub_commands = parser.add_subparsers(title = 'sub-commands')
 
     parser.add_argument(
         '--data_train',
@@ -69,95 +64,111 @@ def main():
 
     parser.add_argument(
         '--show_images',
-        action = 'store_true',
-        help = 'Shows images from all datasets provided.'
-    )
-
-    parser.add_argument(
-        '--n_images_max',
         type = int,
-        nargs = '?',
-        default = 25,
-        help = 'The maximum number of images that can be shown.'
+        nargs='*',
+        help = 'Shows images from all datasets provided. Optional: provide an integer to specify the number of images shown.'
     )
 
     parser.add_argument(
-        '--show_distributions',
-        action = 'store_true',
-        help = 'Shows class distributions from all datasets provided.'
-    )
-
-    parser.add_argument(
-        '--title',
+        '--show_dist',
         type = str,
-        nargs = '?',
-        default = '',
-        help = 'Title for distribution plot'
+        nargs='*',
+        help = 'Shows class distributions for all datasets provided. Optional: provide a single title for the plot.'
     )
 
     parser.add_argument(
-        '--order',
-        type = str,
-        nargs = '?',
+        '--dist_order',
         default = 'train',
+        const = 'train',
+        type = str,
+        nargs = '?',
+        choices = ['train', 'test', 'valid'],
         help = 'Determines which distribution will be used to set the class order on the y-axis.'
     )
 
     parser.add_argument(
         '--prepare',
+        default = 'ignore',
         type = str,
         nargs = '*',
-        help = 'Initiates data preparation (augmentation + pre-processing). If no flags are provided, all steps are performed.'
+        choices = ['mirroring', 'rand_tf'],
+        help = 'Prepares data for use by a model. Optional: provide augmentation options for the training set.'
     )
 
 
     args = parser.parse_args()
-
-    # ---------- Init ---------- #
-
-    flag_prepare = False
-    flag_mirroring = True
-    flag_random_transform = True
-    flag_histogram_equalization = True
-
+    
     # ---------- Setup ---------- #
+
+    # Paths
 
     path_train = args.data_train
     path_valid = args.data_valid
     path_test = args.data_test
 
-    flag_show_images = args.show_images
-    flag_show_distributions = args.show_distributions
+    # Show_images
 
-    if args.order == DISTRIBUTION_ORDER_OPTIONS[0]:
+    flag_show_images = False
+    n_images_max = 25
+    if args.show_images is not None:
+
+        flag_show_images = True
+
+        if len(args.show_images) > 1 or min(args.show_images) < 1:
+            print("ERROR: main(): --show_images: Provide a single positive integer! Your input:", args.show_images)
+            return
+
+        if len(args.show_images) > 0:  
+            n_images_max = args.show_images[0]
+
+
+    # Show_distribution
+
+    flag_show_distributions = False
+    dist_title = None
+    if args.show_dist is not None:
+
+        flag_show_distributions = True
+
+        if len(args.show_dist) > 1:
+            print("ERROR: main(): --show_dist: Provide a single string as title! Your input:", args.show_dist)
+            return
+
+        if len(args.show_dist) > 0:  
+            dist_title = args.show_dist[0]
+
+
+    dist_order = args.dist_order
+    if dist_order == 'train':
         order_index = 0
-    elif args.order == DISTRIBUTION_ORDER_OPTIONS[1]:
+    elif dist_order == 'test':
         order_index = 1
-    elif args.order == DISTRIBUTION_ORDER_OPTIONS[2]:
-        order_index = 2
     else:
-        print("ERROR: main(): Setup:", args.order, "is an invalid option for --order!")
-        return
+        order_index = 2
+    
 
-    n_images_max = args.n_images_max
+    # Prepare
 
-    title = args.title
-
+    flag_prepare = False
+    flag_mirroring = False
+    flag_random_transform = False
     if args.prepare is not None:
 
         flag_prepare = True
 
         if len(args.prepare) > 0:
-            flag_mirroring = DATA_PREPARATION_OPTIONS[0] in args.prepare
-            flag_random_transform = DATA_PREPARATION_OPTIONS[1] in args.prepare
-            flag_histogram_equalization = DATA_PREPARATION_OPTIONS[2] in args.prepare
+            flag_mirroring = 'mirroring' in args.prepare
+            flag_random_transform = 'rand_tf'in args.prepare
+
 
     # Metadata
+
     try:
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
     except FileNotFoundError:
         print("Metadata not found!")
         y_metadata = None
+
 
     # ---------- Load data requested by user ---------- #
         
@@ -176,7 +187,7 @@ def main():
         y_valid = None
 
     if file_exists(path_test):
-        print("Loading testing data")
+        print("Loading testing data...")
         X_test, y_test = data_load_pickled(path_test)
     else:
         X_test = None
@@ -206,7 +217,7 @@ def main():
     # Distributions
 
     if flag_show_distributions:
-        show_label_distributions([y_train, y_test, y_valid], y_metadata, order_index = order_index)
+        show_label_distributions([y_train, y_test, y_valid], y_metadata, title = dist_title, order_index = order_index)
 
 
     # ---------- Prepare data ---------- #
@@ -217,22 +228,20 @@ def main():
         if (X_train is not None) and (y_train is not None):
 
             if flag_mirroring:
-                print("Mirroring data...")
+                print("Mirroring training data...")
                 X_train, y_train = augment_data_by_mirroring(X_train, y_train, MIRROR_MAP)
 
             if flag_random_transform:
-                print("Applying random transform...")
+                print("Applying random transform to training data...")
                 X_train, y_train = augment_data_by_random_transform(X_train, y_train)
 
-            if flag_histogram_equalization:
-                pass
         else:
             print("Training data not provided, skipping preparation!")
 
         if (X_valid is not None) and (y_valid is not None):
+            pass
 
-            if flag_histogram_equalization:
-                pass
+            # TODO: Hist_eq
 
             # TODO: Grayscale
 
@@ -245,9 +254,9 @@ def main():
             print("Validation data not provided, skipping preparation!")
 
         if (X_test is not None) and (y_test is not None):
+            pass
 
-            if flag_histogram_equalization:
-                pass
+            # TODO: Hist_eq
 
             # TODO: Grayscale
 
