@@ -63,7 +63,7 @@ def normalize_images(images, a, b, image_min, image_max):
         Array containing a set of images
     a,b: float,float
         Scaling range
-    images_min, images_max: float,float
+    images_min, images_max: float, float
         Min/max values of 'images'
 
     Outputs
