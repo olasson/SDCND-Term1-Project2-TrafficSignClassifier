@@ -1,4 +1,5 @@
 from code.augment import augment_data_by_mirroring, augment_data_by_random_transform
+from code.process import histogram_equalization, grayscale, normalize_images
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
 from code.helpers import images_pick_subset
@@ -30,6 +31,12 @@ MIRROR_MAP = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
               19, -1, 22, -1, -1, -1, 26, -1, -1, -1,
               30, -1, -1, 34, 33, 35, 37, 36, 39, 38,
               -1, -1, -1]
+
+# Constants for normalization
+A_NORM = 0
+B_NORM = 1
+IMAGE_MIN = 0
+IMAGE_MAX = 255
 
 def main():
 
@@ -227,44 +234,58 @@ def main():
 
         if (X_train is not None) and (y_train is not None):
 
+            # Agumentation
+
             if flag_mirroring:
                 print("Mirroring training data...")
                 X_train, y_train = augment_data_by_mirroring(X_train, y_train, MIRROR_MAP)
 
             if flag_random_transform:
-                print("Applying random transform to training data...")
+                print("Applying random transforms to training data...")
                 X_train, y_train = augment_data_by_random_transform(X_train, y_train)
+
+            # Pre-processing
+
+            print("Pre-processing training data...")
+
+            X_train = histogram_equalization(X_train)
+
+            X_train = grayscale(X_train)
+
+            X_train = normalize_images(X_train, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+
+            X_train = X_train[..., np.newaxis]
 
         else:
             print("Training data not provided, skipping preparation!")
 
         if (X_valid is not None) and (y_valid is not None):
-            pass
 
-            # TODO: Hist_eq
+            print("Pre-processing validation data...")
 
-            # TODO: Grayscale
+            X_valid = histogram_equalization(X_valid)
 
-            # TODO: Normalization
+            X_valid = grayscale(X_valid)
 
-            # TODO: Newaxis
+            X_valid = normalize_images(X_valid, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
 
-            # TODO: Save data
+            X_valid = X_valid[..., np.newaxis]
+
         else:
             print("Validation data not provided, skipping preparation!")
 
         if (X_test is not None) and (y_test is not None):
-            pass
 
-            # TODO: Hist_eq
+            print("Pre-processing validation data...")
 
-            # TODO: Grayscale
+            X_test = histogram_equalization(X_test)
 
-            # TODO: Normalization
+            X_test = grayscale(X_test)
 
-            # TODO: Newaxis
+            X_test = normalize_images(X_test, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
 
-            # TODO: Save data
+            X_test = X_test[..., np.newaxis]
+            
         else:
             print("Testing data not provided, skipping preparation!")
 
