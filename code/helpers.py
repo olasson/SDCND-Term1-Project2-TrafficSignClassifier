@@ -13,8 +13,8 @@ def data_pick_subset(data, indices):
         
     Outputs
     -------
-    data_restructured : numpy.ndarray
-        Array containing a restructured version of 'data'
+    subset : numpy.ndarray
+        Array containing a subset of 'data'
     """   
 
     subset = []
@@ -69,6 +69,8 @@ def images_pick_subset(images, labels = None, labels_metadata = None, indices = 
         labels_metadata_subset = data_pick_subset(labels_metadata, labels_subset)
 
     return images_subset, labels_subset, labels_metadata_subset
+
+
 
 
 
