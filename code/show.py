@@ -9,7 +9,6 @@ N_SHOW_IMAGES_MAX = 50
 
 # Prevvent a user from attempting to show too many distributions at once
 N_DISTRIBUTIONS_MAX = 3
-COLORS = ['blue', 'green', 'red']
 
 def show_images(images, titles_top = None, titles_bottom = None, title_fig_window = None, fig_size = (15, 15), font_size = 10, cmap = None, 
                 n_cols_max = 5, titles_bottom_h_align = 'center', titles_bottom_v_align = 'top', titles_bottom_pos = (16, 32)):
@@ -84,7 +83,7 @@ def show_images(images, titles_top = None, titles_bottom = None, title_fig_windo
     plt.show()
 
 
-def show_label_distributions(distributions, labels_metadata = None, order_index = 0, title = None, title_fig_window = None, fig_size = (15, 10), font_size = 6):
+def show_label_distributions(distributions, labels_metadata = None, order_index = 0, title = None, title_fig_window = None, fig_size = (15, 10), font_size = 6, colors = None):
     """
     Show label distribution
     
@@ -116,6 +115,9 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
         print("ERROR: code.show.show_distributions(): You're trying to show", len(distributions), "distributions. Max number of allowed distributions:", N_DISTRIBUTIONS_MAX)
         return
 
+    if colors is None:
+        colors = [None for d in distributions]
+
     # ---------- Set the desired class order---------- #
 
     classes, classes_count_order = np.unique(distributions[order_index], return_counts = True)
@@ -145,7 +147,7 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
             # Fit the class order of 'distribution' to the desired class order
             classes_count = data_pick_subset(classes_count, classes_order)
 
-            plt.barh(classes, classes_count, color = COLORS[i])
+            plt.barh(classes, classes_count, color = colors[i])
 
     plt.yticks(classes, y_ticks, fontsize = font_size)
 
