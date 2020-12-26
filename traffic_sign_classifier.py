@@ -3,6 +3,7 @@ from code.process import histogram_equalization, grayscale, normalize_images
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
 from code.helpers import images_pick_subset
+from code.models import LeNet, VGG16
 
 
 from pandas import read_csv
@@ -220,17 +221,17 @@ def main():
 
         if file_exists(path_train):
             # Too many images to show them all, pick a subset
-            X_sub, y_sub, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = n_images_max)
+            X_sub, _, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = n_images_max)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_train)
 
         if file_exists(path_valid):
             # Too many images to show them all, pick a subset
-            X_sub, y_sub, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = n_images_max)
+            X_sub, _, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = n_images_max)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_valid)
 
         if file_exists(path_test):
             # Too many images to show them all, pick a subset
-            X_sub, y_sub, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = n_images_max)
+            X_sub, _, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = n_images_max)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_test)
 
     # Distributions
