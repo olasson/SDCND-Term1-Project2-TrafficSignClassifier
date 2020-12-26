@@ -7,6 +7,10 @@ import numpy as np
 # Prevent a user from showing too many images
 N_SHOW_IMAGES_MAX = 50 
 
+# Prevvent a user from attempting to show too many distributions at once
+N_DISTRIBUTIONS_MAX = 3
+COLORS = ['blue', 'green', 'red']
+
 def show_images(images, titles_top = None, titles_bottom = None, title_fig_window = None, fig_size = (15, 15), font_size = 10, cmap = None, 
                 n_cols_max = 5, titles_bottom_h_align = 'center', titles_bottom_v_align = 'top', titles_bottom_pos = (16, 32)):
     """
@@ -50,17 +54,17 @@ def show_images(images, titles_top = None, titles_bottom = None, title_fig_windo
     n_images = len(images)
 
     if n_images > N_SHOW_IMAGES_MAX:
-        print("ERROR: code.show.show_images(): You're trying to show", n_images, "images. Max number of allowed images is", N_SHOW_IMAGES_MAX)
+        print("ERROR: code.show.show_images(): You're trying to show", n_images, "images. Max number of allowed images:", N_SHOW_IMAGES_MAX)
         return
 
     n_cols = int(min(n_images, n_cols_max))
     n_rows = int(np.ceil(n_images / n_cols))
 
-    plt.figure(title_fig_window, figsize = fig_size)
+    fig = plt.figure(title_fig_window, figsize = fig_size)
 
 
     for i in range(n_images):
-        ax = plt.subplot(n_rows, n_cols, i + 1)
+        plt.subplot(n_rows, n_cols, i + 1)
         plt.imshow(images[i], cmap = cmap)
 
         plt.xticks([])
@@ -87,7 +91,7 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
     Inputs
     ----------
     distributions: list
-        A list of one or more label sets -- [labels1, labels2,...labelsN]
+        A list of one or up to three label sets -- [labels1, labels2, labels3]
     labels_metadata: (numpy.ndarray | None)
         Labels metadata
     order_index: int
@@ -107,6 +111,10 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
         Figure showing label class distribution(s)
     
     """
+
+    if len(distributions) > N_DISTRIBUTIONS_MAX:
+        print("ERROR: code.show.show_distributions(): You're trying to show", len(distributions), "distributions. Max number of allowed distributions:", N_DISTRIBUTIONS_MAX)
+        return
 
     # ---------- Set the desired class order---------- #
 
@@ -130,14 +138,14 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
 
     plt.figure(title_fig_window, figsize = fig_size)
 
-    for distribution in distributions:
+    for i,distribution in enumerate(distributions):
         if distribution is not None:
             _, classes_count = np.unique(distribution, return_counts = True)
 
             # Fit the class order of 'distribution' to the desired class order
             classes_count = data_pick_subset(classes_count, classes_order)
 
-            plt.barh(classes, classes_count)
+            plt.barh(classes, classes_count, color = COLORS[i])
 
     plt.yticks(classes, y_ticks, fontsize = font_size)
 
@@ -149,4 +157,3 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
         plt.ylabel("Class ID", fontsize = font_size + 14)
 
     plt.show()
-
