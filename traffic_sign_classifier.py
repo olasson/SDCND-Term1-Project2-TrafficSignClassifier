@@ -35,9 +35,9 @@ PATH_PREPARED_VALID = PATH_PREPARED_FOLDER + 'prepared_valid.p'
 PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 
 # Model
-PATH_MODEL_FOLDER = './models/'
-DECAY_STEPS = 10000
-DECAY_RATE = 0.0
+PATH_MODEL_BASE_FOLDER = './models/'
+#DECAY_STEPS = 10000
+#DECAY_RATE = 0.0
 MODEL_LOSS = 'sparse_categorical_crossentropy'
 MODEL_METRICS = ['accuracy']
 
@@ -111,7 +111,7 @@ def main():
     # Data Preparation
 
     parser.add_argument(
-        '--prepare',
+        '--prepare_data',
         default = 'ignore_this',
         type = str,
         nargs = '*',
@@ -138,17 +138,7 @@ def main():
     )
 
     parser.add_argument(
-        '--model_type',
-        default = 'VGG16',
-        const = 'VGG16',
-        type = str,
-        nargs = '?',
-        choices = ['VGG16', 'LeNet'],
-        help = 'Choose model architecture'
-    )
-
-    parser.add_argument(
-        '--evaluate',
+        '--model_evaluate',
         action = 'store_true',
         help = 'Evaluates the model on the entire (.p) test set.'
     )
@@ -179,6 +169,22 @@ def main():
 
     args = parser.parse_args()
     
+    # ---------- Init Flags ---------- #
+
+    # Show
+    flag_show_images = False
+    flag_show_distributions = False
+    flag_show_predictions = False
+
+    # Prepare
+    flag_prepare = False
+    flag_mirroring = False
+    flag_random_transform = False
+
+    # Model
+    flag_train_model = False
+    flag_evaluate_model = False
+
     # ---------- Setup ---------- #
 
     # Paths
@@ -188,81 +194,58 @@ def main():
     path_test = args.data_test
 
     # Show
-
-    flag_show_images = False
-    flag_show_distributions = False
-    flag_show_predictions = False
     if args.show is not None:
+
         if len(args.show) > 0:
+
             flag_show_images = 'images' in args.show
             flag_show_distributions = 'dist' in args.show
             flag_show_predictions = 'predictions' in args.show
 
-    dist_order = args.dist_order
-    if dist_order == 'train':
+    if args.dist_order == 'train':
         order_index = 0
-    elif dist_order == 'test':
+    elif args.dist_order == 'test':
         order_index = 1
     else:
         order_index = 2
     
 
     # Prepare
-
-    flag_prepare = False
-    flag_mirroring = False
-    flag_random_transform = False
-    if args.prepare is not None:
+    if args.prepare_data is not None:
 
         flag_prepare = True
 
-        if len(args.prepare) > 0:
-            flag_mirroring = 'mirroring' in args.prepare
-            flag_random_transform = 'rand_tf'in args.prepare
+        if len(args.prepare_data) > 0:
+            flag_mirroring = 'mirroring' in args.prepare_data
+            flag_random_transform = 'rand_tf'in args.prepare_data
 
     flag_force_save = args.force_save
 
-    # Models
-
-    flag_train_model = False
-    flag_evaluate_model = False
-
-    if not folder_exists(PATH_MODEL_FOLDER):
-        mkdir(PATH_MODEL_FOLDER)
-
     model_name = args.model_name
-    model_path = PATH_MODEL_FOLDER + model_name + '/'
+    model_path = PATH_MODEL_BASE_FOLDER + model_name + '/'
 
-    if not folder_exists(model_path):
-        mkdir(model_path)
+    flag_evaluate_model = args.model_evaluate
+
+    # Model hyperparams
+    batch_size = args.batch_size
+    lrn_rate = args.lrn_rate
+    epochs = args.epochs
 
     # User has created a new model, train it
     if not model_exists(model_path):
         flag_train_model = True
 
-    # Hyperparams
-    batch_size = args.batch_size
-    lrn_rate = args.lrn_rate
-    epochs = args.epochs
+    if not folder_exists(PATH_PREPARED_FOLDER):
+        mkdir(PATH_PREPARED_FOLDER)
+
+    if not folder_exists(PATH_MODEL_BASE_FOLDER):
+        mkdir(PATH_MODEL_BASE_FOLDER)
+
+    if not folder_exists(model_path):
+        mkdir(model_path)
 
 
-
-    if model_name:
-        if args.model_type == 'VGG16':
-            model = VGG16()
-            print("Model type VGG16 chosen!")
-        elif args.model_type == 'LeNet':
-            model = LeNet()
-            print("Model type LeNet chosen!")
-
-        lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-                                initial_learning_rate = lrn_rate,
-                                decay_steps = DECAY_STEPS,
-                                decay_rate = DECAY_RATE)
-        optimizer = keras.optimizers.Adam(learning_rate = lrn_rate)
-
-
-    # Metadata
+    # Load Metadata
 
     try:
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
@@ -270,38 +253,49 @@ def main():
         print("Metadata not found!")
         y_metadata = None
 
-    if not folder_exists(PATH_PREPARED_FOLDER):
-        mkdir(PATH_PREPARED_FOLDER)
-
-    # ---------- Argument Checks ---------- #
-
-
-
     # ---------- Load data requested by user ---------- #
         
     if file_exists(path_train):
         print("Loading training data...")
         X_train, y_train = data_load_pickled(path_train)
     else:
-        X_train = None
-        y_train = None
+        X_train, y_train = None, None
 
     if file_exists(path_valid):
         print("Loading validation data...")
         X_valid, y_valid = data_load_pickled(path_valid)
     else:
-        X_valid = None
-        y_valid = None
+        X_valid, y_valid = None, None
+
 
     if file_exists(path_test):
         print("Loading testing data...")
         X_test, y_test = data_load_pickled(path_test)
     else:
-        X_test = None
-        y_test = None
+        X_test, y_test = None, None
 
-    #print(distributions_title(y_train, y_test, y_valid))
-    #return
+    # ---------- Argument Checks ---------- #
+
+    # User has selected a order index value that corresponds to an empty label set
+    if (order_index == 0 and y_train is None) or (order_index == 1 and y_test is None) or (order_index == 0 and y_valid is None):
+        print("ERROR: main(): --dist_order: The selected order distribution is 'None'!")
+        return
+
+    # User is trying to evaluate a model that does not exist, and no training is requested either
+    if flag_evaluate_model and (not model_exists(model_path)) and (not flag_train_model):
+        print("ERROR: main(): --model_evaluate: You are trying to evaulate a model that does not exist!")
+        return
+
+    # User is trying to evaluate their model, but the needed data is not loaded
+    if flag_evaluate_model and ((X_test is None) or (y_test is None)):
+        print("ERROR: main(): --model_evaluate: You are trying to evaluate your model, but the testing data is not loaded!")
+        return
+
+    # User is trying to train their model, but the needed data is not loaded
+    if flag_train_model and (((X_train is None) or (y_train is None)) or ((X_valid is None) or (y_valid is None))):
+        print("ERROR: main() --model_name: You are trying to train your model, but training and validation data is not loaded!")
+        return
+
 
     # ---------- Visualize data ---------- #
 
@@ -435,20 +429,37 @@ def main():
 
     if model_name:
 
-        if flag_train_model:
+        flag_model_is_loaded = False
+
+        model = VGG16()
+        optimizer = keras.optimizers.Adam(learning_rate = lrn_rate)
+
+        if flag_train_model or flag_force_save:
+            
             model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
+
             early_stopping = EarlyStopping(monitor = 'val_accuracy', 
                                            patience = 3, min_delta = 0.001, 
                                            mode = 'max', restore_best_weights = True)
             model.fit(X_train, y_train, batch_size = batch_size, epochs = epochs, 
                         validation_data = (X_valid, y_valid), callbacks = [early_stopping])
 
+            print("Saving", model_name, "...")
+            model.save_weights(model_path)
 
-            print("MODEL")
+            flag_model_is_loaded = True
 
-        flag_evaluate_model = False
         if flag_evaluate_model:
-            pass
+            
+            if (not flag_model_is_loaded):
+
+                print("Loading", model_name, "...")
+                model.load_weights(model_path).expect_partial()
+                model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
+
+            print("Evaluating", model_name, "...")
+            model.evaluate(X_test, y_test, batch_size = batch_size) 
+            
 
 
 main()
