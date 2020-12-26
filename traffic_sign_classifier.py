@@ -112,7 +112,7 @@ def main():
 
     parser.add_argument(
         '--prepare_data',
-        default = 'ignore_this',
+        default = None,
         type = str,
         nargs = '*',
         choices = ['mirroring', 'rand_tf'],
@@ -121,10 +121,8 @@ def main():
 
     parser.add_argument(
         '--force_save',
-        type = bool,
-        nargs = '?',
-        default = False,
-        help = 'If true, existing prepared data will be overwritten.'
+        action = 'store_true',
+        help = 'If true, existing prepared data and/or models will be overwritten. Use with care!'
     )
 
     # Models
@@ -221,6 +219,7 @@ def main():
 
     flag_force_save = args.force_save
 
+
     model_name = args.model_name
     model_path = PATH_MODEL_BASE_FOLDER + model_name + '/'
 
@@ -275,26 +274,27 @@ def main():
         X_test, y_test = None, None
 
     # ---------- Argument Checks ---------- #
+    if flag_show_distributions:
+        # User has selected a order index value that corresponds to an empty label set
+        if (order_index == 0 and y_train is None) or (order_index == 1 and y_test is None) or (order_index == 0 and y_valid is None):
+            print("ERROR: main(): --dist_order: The selected order distribution is 'None'!")
+            return
 
-    # User has selected a order index value that corresponds to an empty label set
-    if (order_index == 0 and y_train is None) or (order_index == 1 and y_test is None) or (order_index == 0 and y_valid is None):
-        print("ERROR: main(): --dist_order: The selected order distribution is 'None'!")
-        return
+    if model_name:
+        # User is trying to evaluate a model that does not exist, and no training is requested either
+        if flag_evaluate_model and (not model_exists(model_path)) and (not flag_train_model) and (not flag_force_save):
+            print("ERROR: main(): --model_evaluate: You are trying to evaulate a model that does not exist!")
+            return
 
-    # User is trying to evaluate a model that does not exist, and no training is requested either
-    if flag_evaluate_model and (not model_exists(model_path)) and (not flag_train_model):
-        print("ERROR: main(): --model_evaluate: You are trying to evaulate a model that does not exist!")
-        return
+        # User is trying to evaluate their model, but the needed data is not loaded
+        if flag_evaluate_model and ((X_test is None) or (y_test is None)):
+            print("ERROR: main(): --model_evaluate: You are trying to evaluate your model, but the testing data is not loaded!")
+            return
 
-    # User is trying to evaluate their model, but the needed data is not loaded
-    if flag_evaluate_model and ((X_test is None) or (y_test is None)):
-        print("ERROR: main(): --model_evaluate: You are trying to evaluate your model, but the testing data is not loaded!")
-        return
-
-    # User is trying to train their model, but the needed data is not loaded
-    if flag_train_model and (((X_train is None) or (y_train is None)) or ((X_valid is None) or (y_valid is None))):
-        print("ERROR: main() --model_name: You are trying to train your model, but training and validation data is not loaded!")
-        return
+        # User is trying to train their model, but the needed data is not loaded
+        if flag_train_model and (((X_train is None) or (y_train is None)) or ((X_valid is None) or (y_valid is None))):
+            print("ERROR: main() --model_name: You are trying to train your model, but training and validation data is not loaded!")
+            return
 
 
     # ---------- Visualize data ---------- #
@@ -434,6 +434,7 @@ def main():
         model = VGG16()
         optimizer = keras.optimizers.Adam(learning_rate = lrn_rate)
 
+        # User has the option to force a new training session, even if the model exists 
         if flag_train_model or flag_force_save:
             
             model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
@@ -450,7 +451,7 @@ def main():
             flag_model_is_loaded = True
 
         if flag_evaluate_model:
-            
+
             if (not flag_model_is_loaded):
 
                 print("Loading", model_name, "...")
