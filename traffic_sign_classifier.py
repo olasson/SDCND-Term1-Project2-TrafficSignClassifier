@@ -2,18 +2,27 @@ from code.augment import augment_data_by_mirroring, augment_data_by_random_trans
 from code.process import histogram_equalization, grayscale, normalize_images
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
-from code.helpers import images_pick_subset
+from code.helpers import images_pick_subset #, distributions_title
 from code.models import LeNet, VGG16
 
-
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow import keras
 from pandas import read_csv
 import numpy as np
 import argparse
 
 from os.path import exists as file_exists
 from os.path import isdir as folder_exists
-from os import mkdir
+from os import mkdir, listdir
 
+def model_exists(model_path):
+    return (not len(listdir(model_path)) == 0)
+
+# General constants
+N_IMAGES_MAX = 25
+
+# Colors for distribution plot
+COLORS = ['tab:blue', 'tab:orange', 'tab:green']
 
 # Metadata info
 PATH_METADATA = 'signnames.csv'
@@ -24,6 +33,14 @@ PATH_PREPARED_FOLDER = './data/'
 PATH_PREPARED_TRAIN = PATH_PREPARED_FOLDER + 'prepared_train.p'
 PATH_PREPARED_VALID = PATH_PREPARED_FOLDER + 'prepared_valid.p'
 PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
+
+# Model
+PATH_MODEL_FOLDER = './models/'
+DECAY_STEPS = 10000
+DECAY_RATE = 0.0
+MODEL_LOSS = 'sparse_categorical_crossentropy'
+MODEL_METRICS = ['accuracy']
+
 
 # Mapping where "Class i" is mirrored to imitate "Class MIRROR_MAP[i]"
 # Used by the --prepare command
@@ -44,7 +61,6 @@ def main():
     # ---------- Command line arguments ---------- #
 
     parser = argparse.ArgumentParser(description = 'Traffic Sign Classifier')
-    sub_commands = parser.add_subparsers(title = 'sub-commands')
 
     parser.add_argument(
         '--data_train',
@@ -70,19 +86,17 @@ def main():
         help = 'Path to a pickled (.p) testing set.'
     )
 
-    parser.add_argument(
-        '--show_images',
-        type = int,
-        nargs='*',
-        help = 'Shows images from all datasets provided. Optional: provide an integer to specify the number of images shown.'
-    )
+    # Show
 
     parser.add_argument(
-        '--show_dist',
+        '--show',
+        default = 'ignore_this',
         type = str,
-        nargs='*',
-        help = 'Shows class distributions for all datasets provided. Optional: provide a single title for the plot.'
+        nargs = '*',
+        choices = ['images', 'dist', 'predictions'],
+        help = 'Visualize images, distributions or model predictions.'
     )
+
 
     parser.add_argument(
         '--dist_order',
@@ -94,9 +108,11 @@ def main():
         help = 'Determines which distribution will be used to set the class order on the y-axis.'
     )
 
+    # Data Preparation
+
     parser.add_argument(
         '--prepare',
-        default = 'ignore',
+        default = 'ignore_this',
         type = str,
         nargs = '*',
         choices = ['mirroring', 'rand_tf'],
@@ -111,6 +127,56 @@ def main():
         help = 'If true, existing prepared data will be overwritten.'
     )
 
+    # Models
+
+    parser.add_argument(
+        '--model_name',
+        type = str,
+        nargs = '?',
+        default = '',
+        help = 'Name of model.'
+    )
+
+    parser.add_argument(
+        '--model_type',
+        default = 'VGG16',
+        const = 'VGG16',
+        type = str,
+        nargs = '?',
+        choices = ['VGG16', 'LeNet'],
+        help = 'Choose model architecture'
+    )
+
+    parser.add_argument(
+        '--evaluate',
+        action = 'store_true',
+        help = 'Evaluates the model on the entire (.p) test set.'
+    )
+
+    parser.add_argument(
+        '--batch_size',
+        type = int,
+        nargs = '?',
+        default = 64,
+        help = 'Model learning rate.'
+    )
+
+    parser.add_argument(
+        '--lrn_rate',
+        type = int,
+        nargs = '?',
+        default = 0.001,
+        help = 'Model learning rate.'
+    )
+
+    parser.add_argument(
+        '--epochs',
+        type = int,
+        nargs = '?',
+        default = 50,
+        help = 'Model training epochs.'
+    )
+
     args = parser.parse_args()
     
     # ---------- Setup ---------- #
@@ -121,37 +187,16 @@ def main():
     path_valid = args.data_valid
     path_test = args.data_test
 
-    # Show_images
+    # Show
 
     flag_show_images = False
-    n_images_max = 25
-    if args.show_images is not None:
-
-        flag_show_images = True
-
-        if len(args.show_images) > 1 or min(args.show_images) < 1:
-            print("ERROR: main(): --show_images: Provide a single positive integer! Your input:", args.show_images)
-            return
-
-        if len(args.show_images) > 0:  
-            n_images_max = args.show_images[0]
-
-
-    # Show_distribution
-
     flag_show_distributions = False
-    dist_title = None
-    if args.show_dist is not None:
-
-        flag_show_distributions = True
-
-        if len(args.show_dist) > 1:
-            print("ERROR: main(): --show_dist: Provide a single string as title! Your input:", args.show_dist)
-            return
-
-        if len(args.show_dist) > 0:  
-            dist_title = args.show_dist[0]
-
+    flag_show_predictions = False
+    if args.show is not None:
+        if len(args.show) > 0:
+            flag_show_images = 'images' in args.show
+            flag_show_distributions = 'dist' in args.show
+            flag_show_predictions = 'predictions' in args.show
 
     dist_order = args.dist_order
     if dist_order == 'train':
@@ -177,6 +222,46 @@ def main():
 
     flag_force_save = args.force_save
 
+    # Models
+
+    flag_train_model = False
+    flag_evaluate_model = False
+
+    if not folder_exists(PATH_MODEL_FOLDER):
+        mkdir(PATH_MODEL_FOLDER)
+
+    model_name = args.model_name
+    model_path = PATH_MODEL_FOLDER + model_name + '/'
+
+    if not folder_exists(model_path):
+        mkdir(model_path)
+
+    # User has created a new model, train it
+    if not model_exists(model_path):
+        flag_train_model = True
+
+    # Hyperparams
+    batch_size = args.batch_size
+    lrn_rate = args.lrn_rate
+    epochs = args.epochs
+
+
+
+    if model_name:
+        if args.model_type == 'VGG16':
+            model = VGG16()
+            print("Model type VGG16 chosen!")
+        elif args.model_type == 'LeNet':
+            model = LeNet()
+            print("Model type LeNet chosen!")
+
+        lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+                                initial_learning_rate = lrn_rate,
+                                decay_steps = DECAY_STEPS,
+                                decay_rate = DECAY_RATE)
+        optimizer = keras.optimizers.Adam(learning_rate = lrn_rate)
+
+
     # Metadata
 
     try:
@@ -185,10 +270,12 @@ def main():
         print("Metadata not found!")
         y_metadata = None
 
-    # Create folder(s)
-
     if not folder_exists(PATH_PREPARED_FOLDER):
         mkdir(PATH_PREPARED_FOLDER)
+
+    # ---------- Argument Checks ---------- #
+
+
 
     # ---------- Load data requested by user ---------- #
         
@@ -213,31 +300,43 @@ def main():
         X_test = None
         y_test = None
 
+    #print(distributions_title(y_train, y_test, y_valid))
+    #return
+
     # ---------- Visualize data ---------- #
 
     # Images
 
     if flag_show_images:
 
-        if file_exists(path_train):
+        if (X_train is not None) and (y_train is not None):
             # Too many images to show them all, pick a subset
-            X_sub, _, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = n_images_max)
+            X_sub, _, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_train)
 
-        if file_exists(path_valid):
+        if (X_valid is not None) and (y_valid is not None):
             # Too many images to show them all, pick a subset
-            X_sub, _, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = n_images_max)
+            X_sub, _, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_valid)
 
-        if file_exists(path_test):
+        if (X_test is not None) and (y_test is not None):
             # Too many images to show them all, pick a subset
-            X_sub, _, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = n_images_max)
+            X_sub, _, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_test)
 
     # Distributions
 
     if flag_show_distributions:
-        show_label_distributions([y_train, y_test, y_valid], y_metadata, title = dist_title, order_index = order_index)
+
+        title = ''
+        if y_train is not None:
+            title += "| Training set (Blue) | "
+        if y_test is not None:
+            title += "| Testing set (Orange) |"
+        if y_valid is not None:
+            title += "| Validation set (Green) |"
+
+        show_label_distributions([y_train, y_test, y_valid], y_metadata, title = title, order_index = order_index, colors = COLORS)
 
 
     # ---------- Prepare data ---------- #
@@ -329,10 +428,27 @@ def main():
                 data_save_pickled(PATH_PREPARED_TEST, X_test, y_test)
 
             else:
-                print("Validation data exists, skipping!")
+                print("Testing data exists, skipping!")
 
         else:
             print("Testing data not provided, skipping preparation!")
+
+    if model_name:
+
+        if flag_train_model:
+            model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
+            early_stopping = EarlyStopping(monitor = 'val_accuracy', 
+                                           patience = 3, min_delta = 0.001, 
+                                           mode = 'max', restore_best_weights = True)
+            model.fit(X_train, y_train, batch_size = batch_size, epochs = epochs, 
+                        validation_data = (X_valid, y_valid), callbacks = [early_stopping])
+
+
+            print("MODEL")
+
+        flag_evaluate_model = False
+        if flag_evaluate_model:
+            pass
 
 
 main()
