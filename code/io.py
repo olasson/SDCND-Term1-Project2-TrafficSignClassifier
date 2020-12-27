@@ -2,6 +2,9 @@ import matplotlib.image as mpimg
 import numpy as np
 import pickle
 
+from os import listdir
+from os.path import join
+
 def data_load_pickled(path):
     """
     Load contents of a pickled file into memory
@@ -52,7 +55,7 @@ def data_save_pickled(path, images, labels):
         pickle.dump(data, f, protocol = pickle.HIGHEST_PROTOCOL)
 
 def data_load_web(path):
-    
+
     """
     Load a set of images from a folder into memory
 
@@ -66,10 +69,10 @@ def data_load_web(path):
         Array containing 'images'
     """
 
-    file_names = sorted(os.listdir(path))
+    file_names = sorted(listdir(path))
     images = []
     for file_name in file_names:
-        images.append(mpimg.imread(os.path.join(path, file_name)))
+        images.append(mpimg.imread(join(path, file_name)))
 
     images = np.array(images)
 
