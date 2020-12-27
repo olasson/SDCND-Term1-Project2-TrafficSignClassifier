@@ -27,8 +27,10 @@ COLORS = ['tab:blue', 'tab:orange', 'tab:green']
 PATH_METADATA = 'signnames.csv'
 KEY_METADATA = 'SignName'
 
-# Raw data, only for plotting
+# Raw data
 PATH_RAW_FOLDER = './data/'
+PATH_RAW_TRAIN = PATH_RAW_FOLDER + 'train.p'
+PATH_RAW_VALID = PATH_RAW_FOLDER + 'valid.p'
 PATH_RAW_TEST = PATH_RAW_FOLDER + 'test.p'
 
 # Prepared data
@@ -57,6 +59,18 @@ MIRROR_MAP = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
               -1, -1, -1]
 
 def main():
+
+    # ---------- Pre-flight checks ---------- #
+
+    # If one of these fail, there is no point continuing
+
+    if not folder_exists(PATH_RAW_FOLDER):
+        print("PREFLIGHT ERROR: main(): Raw data folder not found!")
+        return
+
+    if not (file_exists(PATH_RAW_TRAIN) or file_exists(PATH_RAW_VALID) or file_exists(PATH_RAW_TEST)):
+        print("PREFLIGHT ERROR: main(): Raw data not found!")
+        return
 
     # ---------- Command line arguments ---------- #
 
