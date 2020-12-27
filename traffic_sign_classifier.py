@@ -94,8 +94,8 @@ def main():
 
     parser.add_argument(
         '--dist_order',
-        default = 'train',
-        const = 'train',
+        default = '',
+        const = '',
         type = str,
         nargs = '?',
         choices = ['train', 'test', 'valid'],
@@ -215,19 +215,23 @@ def main():
             flag_show_distributions = 'dist' in args.show
             flag_show_predictions = 'predictions' in args.show
 
-    # Set a valid order index. This might cause user input to be ignored.
-    if flag_data_train_loaded and (args.dist_order == 'train'):
-        order_index = 0
-    elif flag_data_test_loaded and (args.dist_order == 'test'):
-        order_index = 1
-    elif flag_data_valid_loaded and (args.dist_order == 'valid'):
-        order_index = 2
-    elif (not flag_data_train_loaded) and flag_data_test_loaded:
-        order_index = 1
-    elif (not flag_data_train_loaded) and flag_data_valid_loaded:
-        order_index = 2
+    # User has not specified a distribution order
+    if not args.dist_order:
+        if flag_data_train_loaded:
+            order_index = 0
+        elif flag_data_test_loaded:
+            order_index = 1
+        else:
+            order_index = 2
+    # User has specified a distribution order
     else:
-        order_index = 2
+        if args.dist_order == 'train':
+            order_index = 0
+        elif args.dist_order == 'test':
+            order_index = 1
+        else:
+            order_index = 2
+
     
     # ---------- Prepare Setup ---------- #
 
@@ -300,7 +304,7 @@ def main():
         print("ERROR: No data is loaded, nothing can be done without some data!")
         return
 
-
+    
     if flag_show_distributions:
 
         # User has selected an order index value that corresponds to an empty label set
@@ -309,6 +313,7 @@ def main():
             (order_index == 2 and (not flag_data_valid_loaded))):
             print("ERROR: main(): The selected order distribution is 'None'!")
             return
+    
 
     if not flag_model_provided:
 
