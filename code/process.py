@@ -1,6 +1,12 @@
 import numpy as np
 import cv2
 
+# Constants for normalization
+A_NORM = 0
+B_NORM = 1
+IMAGE_MIN = 0
+IMAGE_MAX = 255
+
 def histogram_equalization(images):
     """
     Apply histogram equalization to a set of images
@@ -78,3 +84,33 @@ def normalize_images(images, a, b, image_min, image_max):
     normalized_images = np.asarray(normalized_images)
     
     return normalized_images
+
+def pre_process(images):
+
+    """
+    Apply all pre-processing steps to images
+
+    Inputs
+    ----------
+    images: numpy.ndarray
+        Array containing a set of images
+
+    Outputs
+    -------
+    images: numpy.ndarray
+        Array containing a set of pre-processed images
+
+    """ 
+
+    images = histogram_equalization(images)
+
+    images = grayscale(images)
+
+    images = normalize_images(images, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
+
+    images = images[..., np.newaxis]
+
+    return images
+
+
+
