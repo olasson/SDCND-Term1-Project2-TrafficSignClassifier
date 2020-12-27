@@ -171,6 +171,8 @@ def main():
     flag_random_transform = False
 
     # Model
+    flag_model_provided = False
+    flag_model_exists = False
     flag_train_model = False
     flag_evaluate_model = False
 
@@ -186,6 +188,15 @@ def main():
     path_train = args.data_train
     path_valid = args.data_valid
     path_test = args.data_test
+
+    if file_exists(path_train):
+        flag_train_data_loaded = True
+
+    if file_exists(path_valid):
+        flag_valid_data_loaded = True
+
+    if file_exists(path_test):
+        flag_test_data_loaded = True
 
     # Show
     if args.show is not None:
@@ -217,6 +228,10 @@ def main():
 
 
     model_name = args.model_name
+
+    if model_name:
+        flag_model_provided = True
+
     model_path = PATH_MODEL_BASE_FOLDER + model_name + '/'
 
     flag_evaluate_model = args.model_evaluate
@@ -229,6 +244,8 @@ def main():
     # User has created a new model, train it
     if not model_exists(model_path):
         flag_train_model = True
+    else:
+        flag_model_exists = True
 
     if not folder_exists(PATH_PREPARED_FOLDER):
         mkdir(PATH_PREPARED_FOLDER)
@@ -248,52 +265,80 @@ def main():
         print("Metadata not found!")
         y_metadata = None
 
+
+    # ---------- Argument Checks ---------- #
+
+    # Try to catch argument combinations that either:
+    # A) Leads to the program crashing
+    # B) Causes the program to do nothing, which can be confusing.
+
+    if flag_show_images:
+
+        # User is trying to show images, but no data is loaded
+        if not (flag_train_data_loaded or flag_valid_data_loaded or flag_test_data_loaded):
+            print("ERROR: You are trying to show images, but no data is loaded!")
+            return
+
+    if flag_show_distributions:
+
+        # User is trying to show distributions, but no data is loaded
+        if not (flag_train_data_loaded or flag_valid_data_loaded or flag_test_data_loaded):
+            print("ERROR: You are trying to show distributions, but no data is loaded!")
+            return
+
+        # User has selected a order index value that corresponds to an empty label set
+        if (order_index == 0 and flag_train_data_loaded) or (order_index == 1 and flag_test_data_loaded) or (order_index == 0 and flag_valid_data_loaded):
+            print("ERROR: main(): The selected order distribution is 'None'!")
+            return
+
+    if not flag_model_provided:
+
+        # User has requested evaluation or prediction, but provided no model
+        if flag_evaluate_model or flag_show_predictions:
+            print("ERROR: main(): You must provide a model in order to do evaluation and/or prediction!")
+            return
+
+    if flag_model_provided:
+
+        # User has provided a model and requested training, but no training or validation data is loaded
+        if flag_train_model and not (flag_train_data_loaded or flag_valid_data_loaded):
+            print("ERROR: main(): You are trying to train your model, but no training and validation data is loaded!")
+            return
+
+    if not flag_model_exists:
+
+        # User is trying to evalute a model that does not exist, and no training is requested either
+        if flag_evaluate_model and not (flag_train_model or flag_force_save):
+            print("ERROR: main(): Your are trying to evaluate a model that does not exist!")
+            return
+
+    if flag_model_exists:
+
+        # User is trying to evaluate an existing model, but no testing data is provided.
+        if flag_evaluate_model and (not flag_test_data_loaded):
+            print("ERROR: main(): You are trying to evalutate your model, but no testing data is provided!")
+            return
+
+
     # ---------- Load data requested by user ---------- #
         
     if file_exists(path_train):
         print("Loading training data...")
         X_train, y_train = data_load_pickled(path_train)
-        flag_train_data_loaded = True
     else:
         X_train, y_train = None, None
 
     if file_exists(path_valid):
         print("Loading validation data...")
         X_valid, y_valid = data_load_pickled(path_valid)
-        flag_valid_data_loaded = True
     else:
         X_valid, y_valid = None, None
-
 
     if file_exists(path_test):
         print("Loading testing data...")
         X_test, y_test = data_load_pickled(path_test)
-        flag_test_data_loaded = True
     else:
         X_test, y_test = None, None
-
-    # ---------- Argument Checks ---------- #
-    if flag_show_distributions:
-        # User has selected a order index value that corresponds to an empty label set
-        if (order_index == 0 and y_train is None) or (order_index == 1 and y_test is None) or (order_index == 0 and y_valid is None):
-            print("ERROR: main(): --dist_order: The selected order distribution is 'None'!")
-            return
-
-    if model_name:
-        # User is trying to evaluate a model that does not exist, and no training is requested either
-        if flag_evaluate_model and (not model_exists(model_path)) and (not flag_train_model) and (not flag_force_save):
-            print("ERROR: main(): --model_evaluate: You are trying to evaulate a model that does not exist!")
-            return
-
-        # User is trying to evaluate their model, but the needed data is not loaded
-        if flag_evaluate_model and (not flag_test_data_loaded):
-            print("ERROR: main(): --model_evaluate: You are trying to evaluate your model, but the testing data is not loaded!")
-            return
-
-        # User is trying to train their model, but the needed data is not loaded
-        if flag_train_model and not (flag_train_data_loaded or flag_valid_data_loaded):
-            print("ERROR: main() --model_name: You are trying to train your model, but training and validation data is not loaded!")
-            return
 
 
     # ---------- Visualize data ---------- #
