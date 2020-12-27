@@ -215,10 +215,17 @@ def main():
             flag_show_distributions = 'dist' in args.show
             flag_show_predictions = 'predictions' in args.show
 
-    if args.dist_order == 'train':
+    # Set a valid order index. This might cause user input to be ignored.
+    if flag_data_train_loaded and (args.dist_order == 'train'):
         order_index = 0
-    elif args.dist_order == 'test':
+    elif flag_data_test_loaded and (args.dist_order == 'test'):
         order_index = 1
+    elif flag_data_valid_loaded and (args.dist_order == 'valid'):
+        order_index = 2
+    elif (not flag_data_train_loaded) and flag_data_test_loaded:
+        order_index = 1
+    elif (not flag_data_train_loaded) and flag_data_valid_loaded:
+        order_index = 2
     else:
         order_index = 2
     
@@ -297,7 +304,9 @@ def main():
     if flag_show_distributions:
 
         # User has selected an order index value that corresponds to an empty label set
-        if (order_index == 0 and flag_data_train_loaded) or (order_index == 1 and flag_data_test_loaded) or (order_index == 0 and flag_data_valid_loaded):
+        if ((order_index == 0 and (not flag_data_train_loaded)) or 
+            (order_index == 1 and (not flag_data_test_loaded)) or 
+            (order_index == 2 and (not flag_data_valid_loaded))):
             print("ERROR: main(): The selected order distribution is 'None'!")
             return
 
@@ -377,11 +386,11 @@ def main():
     if flag_show_distributions:
 
         title = ''
-        if y_train is not None:
+        if flag_data_train_loaded:
             title += "| Training set (Blue) | "
-        if y_test is not None:
+        if flag_data_test_loaded:
             title += "| Testing set (Orange) |"
-        if y_valid is not None:
+        if flag_data_valid_loaded:
             title += "| Validation set (Green) |"
 
         show_label_distributions([y_train, y_test, y_valid], y_metadata, title = title, order_index = order_index, colors = COLORS)
