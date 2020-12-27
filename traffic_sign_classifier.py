@@ -2,7 +2,7 @@ from code.augment import augment_data_by_mirroring, augment_data_by_random_trans
 from code.process import pre_process
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
-from code.helpers import images_pick_subset, model_exists
+from code.helpers import images_pick_subset, model_exists, dist_is_uniform
 from code.models import LeNet, VGG16
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -89,17 +89,6 @@ def main():
         nargs = '*',
         choices = ['images', 'dist', 'predictions'],
         help = 'Visualize images, distributions or model predictions.'
-    )
-
-
-    parser.add_argument(
-        '--dist_order',
-        default = '',
-        const = '',
-        type = str,
-        nargs = '?',
-        choices = ['train', 'test', 'valid'],
-        help = 'Determines which distribution will be used to set the class order on the y-axis.'
     )
 
     # Data Preparation
@@ -215,22 +204,12 @@ def main():
             flag_show_distributions = 'dist' in args.show
             flag_show_predictions = 'predictions' in args.show
 
-    # User has not specified a distribution order
-    if not args.dist_order:
-        if flag_data_train_loaded:
-            order_index = 0
-        elif flag_data_test_loaded:
-            order_index = 1
-        else:
-            order_index = 2
-    # User has specified a distribution order
+    if flag_data_train_loaded:
+        order_index = 0
+    elif flag_data_test_loaded:
+        order_index = 1
     else:
-        if args.dist_order == 'train':
-            order_index = 0
-        elif args.dist_order == 'test':
-            order_index = 1
-        else:
-            order_index = 2
+        order_index = 2
 
     
     # ---------- Prepare Setup ---------- #
@@ -297,6 +276,7 @@ def main():
     # Try to catch argument combinations that either:
     # A) Leads to the program crashing
     # B) Causes the program to do nothing, which can be confusing.
+    # The checks listed does NOT form an exhaustive list
     
 
     # User is trying to show images, but no data is loaded
@@ -363,6 +343,18 @@ def main():
         X_test, y_test = data_load_pickled(path_test)
     else:
         X_test, y_test = None, None
+
+    # ---------- Post Load ---------- #
+
+    if flag_data_train_loaded:
+        # If the user has loaded a uniform training set, use a different set for the order index
+        # otherwise, the plot will appear messy
+        if dist_is_uniform(y_train):
+
+            if flag_data_test_loaded:
+                order_index = 1
+            else:
+                order_index = 2
 
 
     # ---------- Visualize data ---------- #
