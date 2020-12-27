@@ -71,12 +71,15 @@ def data_load_web(path):
 
     file_names = sorted(listdir(path))
     images = []
+    labels = []
     for file_name in file_names:
         images.append(mpimg.imread(join(path, file_name)))
+        labels.append(int(file_name[:len(file_name) - 4]))
 
     images = np.array(images)
+    labels = np.array(labels)
 
     # Convert from np.float32 to np.uint8
     #images = (images * 255).round().astype(np.uint8)
 
-    return images
+    return images, labels
