@@ -1,4 +1,24 @@
 import numpy as np
+from os import listdir
+
+def model_exists(model_path):
+
+    """
+    Check if a model exists
+    
+    Inputs
+    ----------
+    model_path: string
+        Full path to a keras model
+        
+    Outputs
+    -------
+    result: bool
+        True if model exists, false otherwise
+    """ 
+    result = (not len(listdir(model_path)) == 0)
+
+    return result
 
 def data_pick_subset(data, indices):
     """
@@ -6,14 +26,14 @@ def data_pick_subset(data, indices):
     
     Inputs
     ----------
-    data : numpy.ndarray
+    data: numpy.ndarray
         Array containing some kind of data
     indices: string
         Indices specifying the elements (or order of elements) of 'data' included in 'subset'
         
     Outputs
     -------
-    subset : numpy.ndarray
+    subset: numpy.ndarray
         Array containing a subset of 'data'
     """   
 
@@ -32,7 +52,7 @@ def images_pick_subset(images, labels = None, labels_metadata = None, indices = 
     
     Inputs
     ----------
-    images : numpy.ndarray
+    images: numpy.ndarray
         A set of images, RGB or grayscale
     labels: (None | numpy.ndarray)
         A set of image classes
@@ -44,7 +64,7 @@ def images_pick_subset(images, labels = None, labels_metadata = None, indices = 
         
     Outputs
     -------
-    images_subset : numpy.ndarray
+    images_subset: numpy.ndarray
         A subset of 'images'
     labels_subset: (None | numpy.ndarray)
         A subset of 'labels'

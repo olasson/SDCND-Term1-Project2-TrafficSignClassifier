@@ -2,7 +2,7 @@ from code.augment import augment_data_by_mirroring, augment_data_by_random_trans
 from code.process import pre_process
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
-from code.helpers import images_pick_subset
+from code.helpers import images_pick_subset, model_exists
 from code.models import LeNet, VGG16
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -13,10 +13,7 @@ import argparse
 
 from os.path import exists as file_exists
 from os.path import isdir as folder_exists
-from os import mkdir, listdir
-
-def model_exists(model_path):
-    return (not len(listdir(model_path)) == 0)
+from os import mkdir
 
 # General constants
 N_IMAGES_MAX = 25
@@ -435,6 +432,8 @@ def main():
                 print("Loading", model_name, "...")
                 model.load_weights(model_path).expect_partial()
                 model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
+
+                flag_model_is_loaded = True
 
             print("Evaluating", model_name, "...")
             model.evaluate(X_test, y_test, batch_size = batch_size) 
