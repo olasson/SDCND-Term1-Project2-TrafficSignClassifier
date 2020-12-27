@@ -6,6 +6,7 @@ from code.helpers import images_pick_subset, model_exists
 from code.models import LeNet, VGG16
 
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.optimizers import Adam
 from tensorflow import keras
 from pandas import read_csv
 import numpy as np
@@ -33,10 +34,12 @@ PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 
 # Model
 PATH_MODEL_BASE_FOLDER = './models/'
-#DECAY_STEPS = 10000
-#DECAY_RATE = 0.0
 MODEL_LOSS = 'sparse_categorical_crossentropy'
 MODEL_METRICS = ['accuracy']
+MODEL_TRAINING_PATIENCE = 3
+MODEL_TRAINING_MODE = 'max'
+MODEL_TRAINING_METRIC = 'val_accuracy'
+
 
 
 # Mapping where "Class i" is mirrored to imitate "Class MIRROR_MAP[i]"
@@ -149,11 +152,11 @@ def main():
     )
 
     parser.add_argument(
-        '--epochs',
+        '--max_epochs',
         type = int,
         nargs = '?',
         default = 50,
-        help = 'Model training epochs.'
+        help = 'The maximum number of model training epochs. The model callback can stop training much earlier.'
     )
 
     args = parser.parse_args()
@@ -173,32 +176,37 @@ def main():
     # Model
     flag_model_provided = False
     flag_model_exists = False
-    flag_train_model = False
-    flag_evaluate_model = False
+    flag_model_is_loaded = False
+    flag_model_train = False
+    flag_model_evaluate = False
 
     # Data
-    flag_train_data_loaded = False
-    flag_valid_data_loaded = False
-    flag_test_data_loaded = False
+    flag_data_train_loaded = False
+    flag_data_valid_loaded = False
+    flag_data_test_loaded = False
+
+    # Misc
+    flag_force_save = False
 
     # ---------- Setup ---------- #
 
-    # Paths
+    # ---------- Data Setup ---------- #
 
     path_train = args.data_train
     path_valid = args.data_valid
     path_test = args.data_test
 
     if file_exists(path_train):
-        flag_train_data_loaded = True
+        flag_data_train_loaded = True
 
     if file_exists(path_valid):
-        flag_valid_data_loaded = True
+        flag_data_valid_loaded = True
 
     if file_exists(path_test):
-        flag_test_data_loaded = True
+        flag_data_test_loaded = True
 
-    # Show
+    # ---------- Show Setup ---------- #
+
     if args.show is not None:
 
         if len(args.show) > 0:
@@ -214,8 +222,8 @@ def main():
     else:
         order_index = 2
     
+    # ---------- Prepare Setup ---------- #
 
-    # Prepare
     if args.prepare_data is not None:
 
         flag_prepare = True
@@ -224,28 +232,35 @@ def main():
             flag_mirroring = 'mirroring' in args.prepare_data
             flag_random_transform = 'rand_tf'in args.prepare_data
 
-    flag_force_save = args.force_save
+    
 
+    # ---------- Model Setup ---------- #
 
     model_name = args.model_name
-
     if model_name:
         flag_model_provided = True
 
     model_path = PATH_MODEL_BASE_FOLDER + model_name + '/'
 
-    flag_evaluate_model = args.model_evaluate
+    flag_model_evaluate = args.model_evaluate
 
     # Model hyperparams
     batch_size = args.batch_size
     lrn_rate = args.lrn_rate
-    epochs = args.epochs
+    max_epochs = args.max_epochs
 
-    # User has created a new model, train it
-    if not model_exists(model_path):
-        flag_train_model = True
-    else:
+    if model_exists(model_path):
         flag_model_exists = True
+    else:
+        # User has created a new model, train it
+        flag_model_train = True
+
+    # ---------- Misc Setup ---------- #
+
+    if args.force_save:
+        flag_force_save = True
+        
+    # ---------- Folder Setup ---------- #
 
     if not folder_exists(PATH_PREPARED_FOLDER):
         mkdir(PATH_PREPARED_FOLDER)
@@ -257,7 +272,7 @@ def main():
         mkdir(model_path)
 
 
-    # Load Metadata
+    # ---------- Metadata Setup ---------- #
 
     try:
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
@@ -271,51 +286,46 @@ def main():
     # Try to catch argument combinations that either:
     # A) Leads to the program crashing
     # B) Causes the program to do nothing, which can be confusing.
+    
 
-    if flag_show_images:
+    # User is trying to show images, but no data is loaded
+    if not (flag_data_train_loaded or flag_data_valid_loaded or flag_data_test_loaded):
+        print("ERROR: No data is loaded, nothing can be done without some data!")
+        return
 
-        # User is trying to show images, but no data is loaded
-        if not (flag_train_data_loaded or flag_valid_data_loaded or flag_test_data_loaded):
-            print("ERROR: You are trying to show images, but no data is loaded!")
-            return
 
     if flag_show_distributions:
 
-        # User is trying to show distributions, but no data is loaded
-        if not (flag_train_data_loaded or flag_valid_data_loaded or flag_test_data_loaded):
-            print("ERROR: You are trying to show distributions, but no data is loaded!")
-            return
-
-        # User has selected a order index value that corresponds to an empty label set
-        if (order_index == 0 and flag_train_data_loaded) or (order_index == 1 and flag_test_data_loaded) or (order_index == 0 and flag_valid_data_loaded):
+        # User has selected an order index value that corresponds to an empty label set
+        if (order_index == 0 and flag_data_train_loaded) or (order_index == 1 and flag_data_test_loaded) or (order_index == 0 and flag_data_valid_loaded):
             print("ERROR: main(): The selected order distribution is 'None'!")
             return
 
     if not flag_model_provided:
 
         # User has requested evaluation or prediction, but provided no model
-        if flag_evaluate_model or flag_show_predictions:
+        if flag_model_evaluate or flag_show_predictions:
             print("ERROR: main(): You must provide a model in order to do evaluation and/or prediction!")
             return
 
     if flag_model_provided:
 
         # User has provided a model and requested training, but no training or validation data is loaded
-        if flag_train_model and not (flag_train_data_loaded or flag_valid_data_loaded):
+        if flag_model_train and not (flag_data_train_loaded or flag_data_valid_loaded):
             print("ERROR: main(): You are trying to train your model, but no training and validation data is loaded!")
             return
 
     if not flag_model_exists:
 
         # User is trying to evalute a model that does not exist, and no training is requested either
-        if flag_evaluate_model and not (flag_train_model or flag_force_save):
+        if flag_model_evaluate and not (flag_model_train or flag_force_save):
             print("ERROR: main(): Your are trying to evaluate a model that does not exist!")
             return
 
     if flag_model_exists:
 
         # User is trying to evaluate an existing model, but no testing data is provided.
-        if flag_evaluate_model and (not flag_test_data_loaded):
+        if flag_model_evaluate and (not flag_data_test_loaded):
             print("ERROR: main(): You are trying to evalutate your model, but no testing data is provided!")
             return
 
@@ -347,17 +357,17 @@ def main():
 
     if flag_show_images:
 
-        if flag_train_data_loaded:
+        if flag_data_train_loaded:
             # Too many images to show them all, pick a subset
             X_sub, _, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_train)
 
-        if flag_valid_data_loaded:
+        if flag_data_valid_loaded:
             # Too many images to show them all, pick a subset
             X_sub, _, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_valid)
 
-        if flag_test_data_loaded:
+        if flag_data_test_loaded:
             # Too many images to show them all, pick a subset
             X_sub, _, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_test)
@@ -383,7 +393,7 @@ def main():
 
         # ---------- Prepare Training data ---------- #
 
-        if flag_train_data_loaded:
+        if flag_data_train_loaded:
 
             if (not file_exists(PATH_PREPARED_TRAIN)) or flag_force_save:
 
@@ -413,7 +423,7 @@ def main():
 
         # ---------- Prepare Validation data ---------- #
 
-        if flag_valid_data_loaded:
+        if flag_data_valid_loaded:
 
             if (not file_exists(PATH_PREPARED_VALID)) or flag_force_save:
 
@@ -431,7 +441,7 @@ def main():
 
         # ---------- Prepare Testing data ---------- #
 
-        if flag_test_data_loaded:
+        if flag_data_test_loaded:
 
             if (not file_exists(PATH_PREPARED_TEST)) or flag_force_save:
 
@@ -447,22 +457,20 @@ def main():
         else:
             print("Testing data not provided, skipping preparation!")
 
-    if model_name:
-
-        flag_model_is_loaded = False
+    if flag_model_provided:
 
         model = VGG16()
-        optimizer = keras.optimizers.Adam(learning_rate = lrn_rate)
+        optimizer = Adam(learning_rate = lrn_rate)
 
-        # User has the option to force a new training session, even if the model exists 
-        if (flag_train_model and flag_train_data_loaded and flag_valid_data_loaded) or flag_force_save:
+        # flag_force_save: User has the option to force a new training session, even if the model exists 
+        if (flag_model_train and flag_data_train_loaded and flag_data_valid_loaded) or flag_force_save:
             
             model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
 
-            early_stopping = EarlyStopping(monitor = 'val_accuracy', 
-                                           patience = 3, min_delta = 0.001, 
-                                           mode = 'max', restore_best_weights = True)
-            model.fit(X_train, y_train, batch_size = batch_size, epochs = epochs, 
+            early_stopping = EarlyStopping(monitor = MODEL_TRAINING_METRIC, 
+                                           patience = MODEL_TRAINING_PATIENCE, min_delta = lrn_rate, 
+                                           mode = MODEL_TRAINING_MODE, restore_best_weights = True)
+            model.fit(X_train, y_train, batch_size = batch_size, epochs = max_epochs, 
                         validation_data = (X_valid, y_valid), callbacks = [early_stopping])
 
             print("Saving", model_name, "...")
@@ -470,7 +478,7 @@ def main():
 
             flag_model_is_loaded = True
 
-        if (flag_evaluate_model and flag_test_data_loaded):
+        if (flag_model_evaluate and flag_data_test_loaded):
 
             if (not flag_model_is_loaded):
 
