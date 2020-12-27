@@ -2,7 +2,7 @@ from code.augment import augment_data_by_mirroring, augment_data_by_random_trans
 from code.process import pre_process
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
-from code.helpers import images_pick_subset, model_exists, dist_is_uniform
+from code.helpers import images_pick_subset, predictions_create_titles, model_exists, dist_is_uniform
 from code.models import LeNet, VGG16
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -18,6 +18,7 @@ from os import mkdir
 
 # General constants
 N_IMAGES_MAX = 25
+N_PREDICTIONS_MAX = 15
 
 # Colors for distribution plot
 COLORS = ['tab:blue', 'tab:orange', 'tab:green']
@@ -26,7 +27,11 @@ COLORS = ['tab:blue', 'tab:orange', 'tab:green']
 PATH_METADATA = 'signnames.csv'
 KEY_METADATA = 'SignName'
 
-# Fixed names for prepared data
+# Raw data, only for plotting
+PATH_RAW_FOLDER = './data/'
+PATH_RAW_TEST = PATH_RAW_FOLDER + 'test.p'
+
+# Prepared data
 PATH_PREPARED_FOLDER = './data/'
 PATH_PREPARED_TRAIN = PATH_PREPARED_FOLDER + 'prepared_train.p'
 PATH_PREPARED_VALID = PATH_PREPARED_FOLDER + 'prepared_valid.p'
@@ -39,6 +44,7 @@ MODEL_METRICS = ['accuracy']
 MODEL_TRAINING_PATIENCE = 3
 MODEL_TRAINING_MODE = 'max'
 MODEL_TRAINING_METRIC = 'val_accuracy'
+MODEL_TRAINING_MIN_DELTA = 0.001
 
 
 
@@ -87,7 +93,7 @@ def main():
         default = None,
         type = str,
         nargs = '*',
-        choices = ['images', 'dist', 'predictions'],
+        choices = ['images', 'dist', 'pred'],
         help = 'Visualize images, distributions or model predictions.'
     )
 
@@ -129,12 +135,12 @@ def main():
         type = int,
         nargs = '?',
         default = 64,
-        help = 'Model learning rate.'
+        help = 'Model batch size.'
     )
 
     parser.add_argument(
         '--lrn_rate',
-        type = int,
+        type = float,
         nargs = '?',
         default = 0.001,
         help = 'Model learning rate.'
@@ -173,6 +179,7 @@ def main():
     flag_data_train_loaded = False
     flag_data_valid_loaded = False
     flag_data_test_loaded = False
+    flag_data_web_loaded = False
 
     # Misc
     flag_force_save = False
@@ -200,7 +207,7 @@ def main():
 
             flag_show_images = 'images' in args.show
             flag_show_distributions = 'dist' in args.show
-            flag_show_predictions = 'predictions' in args.show
+            flag_show_predictions = 'pred' in args.show
 
     if flag_data_train_loaded:
         order_index = 0
@@ -236,6 +243,7 @@ def main():
     batch_size = args.batch_size
     lrn_rate = args.lrn_rate
     max_epochs = args.max_epochs
+
 
     if model_exists(model_path):
         flag_model_exists = True
@@ -293,22 +301,26 @@ def main():
     if flag_model_provided:
 
         # User has provided a model and requested training, but no training or validation data is loaded
-        if flag_model_train and not (flag_data_train_loaded or flag_data_valid_loaded):
+        if (flag_model_train or flag_force_save) and not (flag_data_train_loaded or flag_data_valid_loaded):
             print("ERROR: main(): You are trying to train your model, but no training and validation data is loaded!")
             return
 
     if not flag_model_exists:
 
         # User is trying to evalute a model that does not exist, and no training is requested either
-        if flag_model_evaluate and not (flag_model_train or flag_force_save):
-            print("ERROR: main(): Your are trying to evaluate a model that does not exist!")
+        if (flag_model_evaluate or flag_show_predictions) and not (flag_model_train or flag_force_save):
+            print("ERROR: main(): Your are trying to evaluate/predict with a model that does not exist!")
             return
 
     if flag_model_exists:
 
         # User is trying to evaluate an existing model, but no testing data is provided.
         if flag_model_evaluate and (not flag_data_test_loaded):
-            print("ERROR: main(): You are trying to evalutate your model, but no testing data is provided!")
+            print("ERROR: main(): You are trying to evalutate your model, but no testing data is loaded!")
+            return
+
+        if flag_show_predictions and not (flag_data_test_loaded or flag_data_web_loaded):
+            print("ERROR: main(): You are trying to show model predictions, but no relevant data is loaded! ")
             return
 
 
@@ -459,12 +471,12 @@ def main():
         optimizer = Adam(learning_rate = lrn_rate)
 
         # flag_force_save: User has the option to force a new training session, even if the model exists 
-        if (flag_model_train and flag_data_train_loaded and flag_data_valid_loaded) or flag_force_save:
+        if flag_model_train or flag_force_save:
             
             model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
 
             early_stopping = EarlyStopping(monitor = MODEL_TRAINING_METRIC, 
-                                           patience = MODEL_TRAINING_PATIENCE, min_delta = lrn_rate, 
+                                           patience = MODEL_TRAINING_PATIENCE, min_delta = MODEL_TRAINING_MIN_DELTA, 
                                            mode = MODEL_TRAINING_MODE, restore_best_weights = True)
             model.fit(X_train, y_train, batch_size = batch_size, epochs = max_epochs, 
                         validation_data = (X_valid, y_valid), callbacks = [early_stopping])
@@ -474,7 +486,7 @@ def main():
 
             flag_model_is_loaded = True
 
-        if (flag_model_evaluate and flag_data_test_loaded):
+        if flag_model_evaluate:
 
             if (not flag_model_is_loaded):
 
@@ -485,7 +497,40 @@ def main():
                 flag_model_is_loaded = True
 
             print("Evaluating", model_name, "...")
-            model.evaluate(X_test, y_test, batch_size = batch_size) 
+            model.evaluate(X_test, y_test, batch_size = batch_size)
+
+        if flag_show_predictions:
+
+            if (not flag_model_is_loaded):
+
+                print("Loading", model_name, "...")
+                model.load_weights(model_path).expect_partial()
+                model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
+
+                flag_model_is_loaded = True
+
+            if flag_data_test_loaded:
+                print("Showing test predictions for", model_name, "...")
+
+                # Load raw data for nicer plots
+                X_test_raw, _ = data_load_pickled(PATH_RAW_TEST)
+                
+                predictions_test = model.predict(X_test)
+
+                n_images = len(X_test)
+
+                indices = np.random.randint(0, n_images, min(n_images, N_PREDICTIONS_MAX))
+
+                y_pred = predictions_create_titles(predictions_test, y_test, y_metadata, indices)
+                X_pred, _, _ = images_pick_subset(X_test_raw, indices = indices, n_images_max = N_IMAGES_MAX)
+
+                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Testing set predictions', 
+                            font_size = 12, n_cols_max = 3, titles_bottom_h_align = 'left', titles_bottom_pos = (34, 7.0))
+
+            if flag_data_web_loaded:
+                print("Showing web predictions for", model_name, "...")
+                # TODO: Web predictions
+
             
 
 
