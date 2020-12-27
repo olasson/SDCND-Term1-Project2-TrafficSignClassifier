@@ -1,8 +1,8 @@
 from code.augment import augment_data_by_mirroring, augment_data_by_random_transform
 from code.process import pre_process
 from code.show import show_images, show_label_distributions
-from code.io import data_load_pickled, data_save_pickled
-from code.helpers import images_pick_subset, predictions_create_titles, model_exists, dist_is_uniform
+from code.io import data_load_pickled, data_save_pickled, data_load_web
+from code.helpers import images_pick_subset, predictions_create_titles, model_exists, folder_is_empty, dist_is_uniform
 from code.models import LeNet, VGG16
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -20,9 +20,6 @@ from os import mkdir
 N_IMAGES_MAX = 25
 N_PREDICTIONS_MAX = 15
 
-# Colors for distribution plot
-COLORS = ['tab:blue', 'tab:orange', 'tab:green']
-
 # Metadata info
 PATH_METADATA = 'signnames.csv'
 KEY_METADATA = 'SignName'
@@ -39,6 +36,9 @@ PATH_PREPARED_TRAIN = PATH_PREPARED_FOLDER + 'prepared_train.p'
 PATH_PREPARED_VALID = PATH_PREPARED_FOLDER + 'prepared_valid.p'
 PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 
+# Web data
+PATH_WEB_FOLDER = './images/web/'
+
 # Model
 PATH_MODEL_BASE_FOLDER = './models/'
 MODEL_LOSS = 'sparse_categorical_crossentropy'
@@ -49,14 +49,16 @@ MODEL_TRAINING_METRIC = 'val_accuracy'
 MODEL_TRAINING_MIN_DELTA = 0.001
 
 
-
 # Mapping where "Class i" is mirrored to imitate "Class MIRROR_MAP[i]"
-# Used by the --prepare command
+# Used by data augmentation
 MIRROR_MAP = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
               -1, 11, 12, 13, -1, 15, -1, 17, 18, 20,
               19, -1, 22, -1, -1, -1, 26, -1, -1, -1,
               30, -1, -1, 34, 33, 35, 37, 36, 39, 38,
               -1, -1, -1]
+
+# Colors for distribution plot
+COLORS = ['tab:blue', 'tab:orange', 'tab:green']
 
 def main():
 
@@ -98,6 +100,14 @@ def main():
         nargs = '?',
         default = '',
         help = 'Path to a pickled (.p) testing set.'
+    )
+
+    parser.add_argument(
+        '--data_web',
+        type = str,
+        nargs = '?',
+        default = '',
+        help = 'Path to folder containing a set of images.'
     )
 
     # Show
@@ -203,6 +213,7 @@ def main():
     path_train = args.data_train
     path_valid = args.data_valid
     path_test = args.data_test
+    path_web = args.data_web
 
     if file_exists(path_train):
         flag_data_train_loaded = True
@@ -212,6 +223,10 @@ def main():
 
     if file_exists(path_test):
         flag_data_test_loaded = True
+
+    # Note: Web images are not pickled
+    if not folder_is_empty(path_web):
+        flag_data_web_loaded = True
 
     # ---------- Show Setup ---------- #
 
@@ -300,7 +315,7 @@ def main():
     
 
     # User is trying to show images, but no data is loaded
-    if not (flag_data_train_loaded or flag_data_valid_loaded or flag_data_test_loaded):
+    if not (flag_data_train_loaded or flag_data_valid_loaded or flag_data_test_loaded or flag_data_web_loaded):
         print("ERROR: No data is loaded, nothing can be done without some data!")
         return
     
@@ -357,6 +372,12 @@ def main():
         X_test, y_test = data_load_pickled(path_test)
     else:
         X_test, y_test = None, None
+
+    if not folder_is_empty(path_web):
+        print("Loading web data...")
+        X_web = data_load_web(path_web)
+    else:
+        X_web = None
 
     # ---------- Post Load ---------- #
 
