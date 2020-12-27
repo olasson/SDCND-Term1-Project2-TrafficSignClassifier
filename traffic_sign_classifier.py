@@ -84,7 +84,7 @@ def main():
 
     parser.add_argument(
         '--show',
-        default = 'ignore_this',
+        default = None,
         type = str,
         nargs = '*',
         choices = ['images', 'dist', 'predictions'],
@@ -281,16 +281,6 @@ def main():
     if not (flag_data_train_loaded or flag_data_valid_loaded or flag_data_test_loaded):
         print("ERROR: No data is loaded, nothing can be done without some data!")
         return
-
-    
-    if flag_show_distributions:
-
-        # User has selected an order index value that corresponds to an empty label set
-        if ((order_index == 0 and (not flag_data_train_loaded)) or 
-            (order_index == 1 and (not flag_data_test_loaded)) or 
-            (order_index == 2 and (not flag_data_valid_loaded))):
-            print("ERROR: main(): The selected order distribution is 'None'!")
-            return
     
 
     if not flag_model_provided:
