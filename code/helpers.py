@@ -2,6 +2,28 @@ import numpy as np
 from os import listdir
 from os.path import isdir as folder_exists
 
+def folder_is_empty(path):
+
+    """
+    Check if a folder is empty
+    
+    Inputs
+    ----------
+    path: string
+        Full path to a keras model
+        
+    Outputs
+    -------
+    result: bool
+        True if folder is empty, false otherwise
+    """
+
+    result = True
+    if folder_exists(path):
+        result = (len(listdir(path)) == 0)
+    
+    return result
+
 def model_exists(model_path):
 
     """
@@ -17,10 +39,8 @@ def model_exists(model_path):
     result: bool
         True if model exists, false otherwise
     """ 
-    result = False
-    
-    if folder_exists(model_path):
-        result = (not len(listdir(model_path)) == 0)
+
+    result = (not folder_is_empty(model_path))
 
     return result
 
