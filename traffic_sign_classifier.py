@@ -177,8 +177,6 @@ def main():
     # Misc
     flag_force_save = False
 
-    # ---------- Setup ---------- #
-
     # ---------- Data Setup ---------- #
 
     path_train = args.data_train
@@ -347,14 +345,16 @@ def main():
     # ---------- Post Load ---------- #
 
     if flag_data_train_loaded:
-        # If the user has loaded a uniform training set, use a different set for the order index
-        # otherwise, the plot will appear messy
+        # If the user has loaded a uniform training set (can happen if y_train has undergone augmentation), 
+        # use a different set for the order index, otherwise, the plot will appear unstructured and messy
         if dist_is_uniform(y_train):
 
             if flag_data_test_loaded:
                 order_index = 1
-            else:
+            elif flag_data_valid_loaded:
                 order_index = 2
+            else:
+                order_index = 0
 
 
     # ---------- Visualize data ---------- #
