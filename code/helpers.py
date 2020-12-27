@@ -1,5 +1,6 @@
 import numpy as np
 from os import listdir
+from os.path import isdir as folder_exists
 
 def model_exists(model_path):
 
@@ -16,7 +17,10 @@ def model_exists(model_path):
     result: bool
         True if model exists, false otherwise
     """ 
-    result = (not len(listdir(model_path)) == 0)
+    result = False
+    
+    if folder_exists(model_path):
+        result = (not len(listdir(model_path)) == 0)
 
     return result
 
@@ -92,7 +96,7 @@ def images_pick_subset(images, labels = None, labels_metadata = None, indices = 
 
 def dist_is_uniform(labels):
 
-    """
+    """predictions_pick_subset
     Check if a label distribution is uniform
     
     Inputs
@@ -122,6 +126,50 @@ def dist_is_uniform(labels):
     return is_uniform
 
 
+def predictions_create_titles(predictions, labels, labels_metadata = None, indices = None, top_k = 5, n_images_max = 25):
+    """
+    Create a set of image titles based on a set of predictions
+    
+    Inputs
+    ----------
+    predictions: numpy.ndarray
+        A set of image class predictions from a model
+    labels: numpy.ndarray
+        A set of image classes
+    labels_metadata: (None | numpy.ndarray)
+        A set of metadata about image classes
+
+
+    Outputs
+    -------
+    top_k_predictions: 
+    
+    """
+
+    if indices is None:
+        indices = np.arange(min(len(predictions), n_images_max))
+
+    predictions = data_pick_subset(predictions, indices)
+
+    titles = []
+
+    # labels_metadata is preferable for creating the titles, but not strictly required
+    if labels_metadata is not None:
+        labels = labels_metadata
+
+    for prediction in predictions:
+        top_k_predictions  = prediction.argsort()[-top_k:][::-1]
+        top_k_probabilities = np.sort(prediction)[-top_k:][::-1]
+
+        labels_subset = data_pick_subset(labels, top_k_predictions)
+
+        title = ''
+        for k, prob in enumerate(top_k_probabilities):
+            title += labels_subset[k] + " " + "P:" + str(prob) + "\n"
+
+        titles.append(title)
+
+    return titles
 
 
 
