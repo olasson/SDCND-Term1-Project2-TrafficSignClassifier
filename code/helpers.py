@@ -90,6 +90,40 @@ def images_pick_subset(images, labels = None, labels_metadata = None, indices = 
 
     return images_subset, labels_subset, labels_metadata_subset
 
+def dist_is_uniform(labels):
+
+    """
+    Check if a label distribution is uniform
+    
+    Inputs
+    ----------
+    labels: numpy.ndarray
+        A set of image classes
+
+        
+    Outputs
+    -------
+    is_uniform: bool
+        True if 'labels' is uniform, False otherwise
+    
+    """
+    
+    classes, classes_count = np.unique(labels, return_counts = True)
+
+    class_ref_count = classes_count[0]
+
+    is_uniform = True
+
+    for class_count in classes_count:
+
+        if class_count != class_ref_count:
+            is_uniform = False
+
+    return is_uniform
+
+
+
+
 
 
 
