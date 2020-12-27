@@ -1,8 +1,8 @@
 from code.augment import augment_data_by_mirroring, augment_data_by_random_transform
-from code.process import histogram_equalization, grayscale, normalize_images
+from code.process import pre_process
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled
-from code.helpers import images_pick_subset #, distributions_title
+from code.helpers import images_pick_subset
 from code.models import LeNet, VGG16
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -49,12 +49,6 @@ MIRROR_MAP = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
               19, -1, 22, -1, -1, -1, 26, -1, -1, -1,
               30, -1, -1, 34, 33, 35, 37, 36, 39, 38,
               -1, -1, -1]
-
-# Constants for normalization
-A_NORM = 0
-B_NORM = 1
-IMAGE_MIN = 0
-IMAGE_MAX = 255
 
 def main():
 
@@ -183,6 +177,11 @@ def main():
     flag_train_model = False
     flag_evaluate_model = False
 
+    # Data
+    flag_train_data_loaded = False
+    flag_valid_data_loaded = False
+    flag_test_data_loaded = False
+
     # ---------- Setup ---------- #
 
     # Paths
@@ -257,12 +256,14 @@ def main():
     if file_exists(path_train):
         print("Loading training data...")
         X_train, y_train = data_load_pickled(path_train)
+        flag_train_data_loaded = True
     else:
         X_train, y_train = None, None
 
     if file_exists(path_valid):
         print("Loading validation data...")
         X_valid, y_valid = data_load_pickled(path_valid)
+        flag_valid_data_loaded = True
     else:
         X_valid, y_valid = None, None
 
@@ -270,6 +271,7 @@ def main():
     if file_exists(path_test):
         print("Loading testing data...")
         X_test, y_test = data_load_pickled(path_test)
+        flag_test_data_loaded = True
     else:
         X_test, y_test = None, None
 
@@ -287,12 +289,12 @@ def main():
             return
 
         # User is trying to evaluate their model, but the needed data is not loaded
-        if flag_evaluate_model and ((X_test is None) or (y_test is None)):
+        if flag_evaluate_model and (not flag_test_data_loaded):
             print("ERROR: main(): --model_evaluate: You are trying to evaluate your model, but the testing data is not loaded!")
             return
 
         # User is trying to train their model, but the needed data is not loaded
-        if flag_train_model and (((X_train is None) or (y_train is None)) or ((X_valid is None) or (y_valid is None))):
+        if flag_train_model and not (flag_train_data_loaded or flag_valid_data_loaded):
             print("ERROR: main() --model_name: You are trying to train your model, but training and validation data is not loaded!")
             return
 
@@ -303,17 +305,17 @@ def main():
 
     if flag_show_images:
 
-        if (X_train is not None) and (y_train is not None):
+        if flag_train_data_loaded:
             # Too many images to show them all, pick a subset
             X_sub, _, y_metadata_sub = images_pick_subset(X_train, y_train, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_train)
 
-        if (X_valid is not None) and (y_valid is not None):
+        if flag_valid_data_loaded:
             # Too many images to show them all, pick a subset
             X_sub, _, y_metadata_sub = images_pick_subset(X_valid, y_valid, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_valid)
 
-        if (X_test is not None) and (y_test is not None):
+        if flag_test_data_loaded:
             # Too many images to show them all, pick a subset
             X_sub, _, y_metadata_sub = images_pick_subset(X_test, y_test, y_metadata, n_images_max = N_IMAGES_MAX)
             show_images(X_sub, y_metadata_sub, title_fig_window = path_test)
@@ -339,7 +341,7 @@ def main():
 
         # ---------- Prepare Training data ---------- #
 
-        if (X_train is not None) and (y_train is not None):
+        if flag_train_data_loaded:
 
             if (not file_exists(PATH_PREPARED_TRAIN)) or flag_force_save:
 
@@ -356,17 +358,9 @@ def main():
                 # Pre-processing
 
                 print("Pre-processing training data...")
-
-                X_train = histogram_equalization(X_train)
-
-                X_train = grayscale(X_train)
-
-                X_train = normalize_images(X_train, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
-
-                X_train = X_train[..., np.newaxis]
+                X_train = pre_process(X_train)
 
                 print("Saving training data...")
-
                 data_save_pickled(PATH_PREPARED_TRAIN, X_train, y_train)
 
             else:
@@ -377,22 +371,14 @@ def main():
 
         # ---------- Prepare Validation data ---------- #
 
-        if (X_valid is not None) and (y_valid is not None):
+        if flag_valid_data_loaded:
 
             if (not file_exists(PATH_PREPARED_VALID)) or flag_force_save:
 
                 print("Pre-processing validation data...")
-
-                X_valid = histogram_equalization(X_valid)
-
-                X_valid = grayscale(X_valid)
-
-                X_valid = normalize_images(X_valid, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
-
-                X_valid = X_valid[..., np.newaxis]
+                X_valid = pre_process(X_valid)
 
                 print("Saving validation data...")
-
                 data_save_pickled(PATH_PREPARED_VALID, X_valid, y_valid)
 
             else:
@@ -403,22 +389,14 @@ def main():
 
         # ---------- Prepare Testing data ---------- #
 
-        if (X_test is not None) and (y_test is not None):
+        if flag_test_data_loaded:
 
             if (not file_exists(PATH_PREPARED_TEST)) or flag_force_save:
 
                 print("Pre-processing validation data...")
-
-                X_test = histogram_equalization(X_test)
-
-                X_test = grayscale(X_test)
-
-                X_test = normalize_images(X_test, A_NORM, B_NORM, IMAGE_MIN, IMAGE_MAX)
-
-                X_test = X_test[..., np.newaxis]
+                X_test = pre_process(X_test)
 
                 print("Saving testing data...")
-
                 data_save_pickled(PATH_PREPARED_TEST, X_test, y_test)
 
             else:
@@ -435,7 +413,7 @@ def main():
         optimizer = keras.optimizers.Adam(learning_rate = lrn_rate)
 
         # User has the option to force a new training session, even if the model exists 
-        if flag_train_model or flag_force_save:
+        if (flag_train_model and flag_train_data_loaded and flag_valid_data_loaded) or flag_force_save:
             
             model.compile(optimizer = optimizer, loss = MODEL_LOSS, metrics = MODEL_METRICS)
 
@@ -450,7 +428,7 @@ def main():
 
             flag_model_is_loaded = True
 
-        if flag_evaluate_model:
+        if (flag_evaluate_model and flag_test_data_loaded):
 
             if (not flag_model_is_loaded):
 
