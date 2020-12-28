@@ -88,6 +88,14 @@ def main():
         print("PREFLIGHT ERROR: main(): Raw data not found!")
         return
 
+    # ---------- Constant Folder Setup ---------- #
+
+    if not folder_exists(PATH_PREPARED_FOLDER):
+        mkdir(PATH_PREPARED_FOLDER)
+
+    if not folder_exists(PATH_MODEL_BASE_FOLDER):
+        mkdir(PATH_MODEL_BASE_FOLDER)
+
     # ---------- Command line arguments ---------- #
 
     parser = argparse.ArgumentParser(description = 'Traffic Sign Classifier')
@@ -308,22 +316,13 @@ def main():
             # User has created a new model, train it
             flag_model_train = True
 
+        if not folder_exists(model_path):
+            mkdir(model_path)
+
     # ---------- Misc Setup ---------- #
 
     if args.force_save:
         flag_force_save = True
-        
-    # ---------- Folder Setup ---------- #
-
-    if not folder_exists(PATH_PREPARED_FOLDER):
-        mkdir(PATH_PREPARED_FOLDER)
-
-    if not folder_exists(PATH_MODEL_BASE_FOLDER):
-        mkdir(PATH_MODEL_BASE_FOLDER)
-        
-    if flag_model_provided:
-        if not folder_exists(model_path):
-            mkdir(model_path)
 
 
     # ---------- Metadata Setup ---------- #
