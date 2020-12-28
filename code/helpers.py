@@ -146,7 +146,7 @@ def dist_is_uniform(labels):
     return is_uniform
 
 
-def predictions_create_titles(predictions, labels, labels_metadata = None, indices = None, top_k = 5, n_images_max = 25):
+def predictions_create_titles(predictions, labels, indices = None, top_k = 5, n_images_max = 25):
     """
     Create a set of image titles based on a set of predictions
     
@@ -173,10 +173,6 @@ def predictions_create_titles(predictions, labels, labels_metadata = None, indic
 
     titles = []
 
-    # labels_metadata is preferable for creating the titles, but not strictly required
-    if labels_metadata is not None:
-        labels = labels_metadata
-
     for prediction in predictions:
         top_k_predictions  = prediction.argsort()[-top_k:][::-1]
         top_k_probabilities = np.sort(prediction)[-top_k:][::-1]
@@ -190,6 +186,37 @@ def predictions_create_titles(predictions, labels, labels_metadata = None, indic
         titles.append(title)
 
     return titles
+
+def web_data_file_names_are_valid(folder_path):
+    """
+    Verify that the web data image names are valid
+    
+    Inputs
+    ----------
+    folder_path: string
+        Path to a folder containing a set of images 
+
+
+    Outputs
+    -------
+    top_k_predictions: 
+    
+    """
+
+    result = True
+
+    file_names = sorted(listdir(folder_path))
+
+    tmp = 0
+    for file_name in file_names:
+        try:
+            tmp = int(file_name[:len(file_name) - 4])
+        except ValueError:
+            result = False
+            break
+
+    return result
+
 
 
 
