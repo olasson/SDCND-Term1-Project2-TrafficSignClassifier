@@ -1,13 +1,23 @@
+"""
+This is the main project file for the Traffic Sign Classifier Project.
+It contains an implementation of a (very) basic command line tool
+"""
+
+# ---------- Custom Imports ---------- #
+
+from code.helpers import images_pick_subset, predictions_create_titles, folder_is_empty, dist_is_uniform, web_data_file_names_are_valid
 from code.augment import augment_data_by_mirroring, augment_data_by_random_transform
-from code.process import pre_process
-from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled, data_load_web
-from code.helpers import images_pick_subset, predictions_create_titles, model_exists, folder_is_empty, dist_is_uniform, web_data_file_names_are_valid
+from code.show import show_images, show_label_distributions
 from code.models import LeNet, VGG16
+from code.process import pre_process
+
+# ---------- General Imports ---------- #
 
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import Adam
 from tensorflow import keras
+
 from pandas import read_csv
 import numpy as np
 import argparse
@@ -15,6 +25,8 @@ import argparse
 from os.path import exists as file_exists
 from os.path import isdir as folder_exists
 from os import mkdir, listdir
+
+# ---------- Constants ---------- #
 
 # General constants
 N_IMAGES_MAX = 25
@@ -59,6 +71,8 @@ MIRROR_MAP = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 
 # Colors for distribution plot
 COLORS = ['tab:blue', 'tab:orange', 'tab:green']
+
+# ---------- Main ---------- #
 
 def main():
 
@@ -288,7 +302,7 @@ def main():
         max_epochs = args.max_epochs
 
 
-        if model_exists(model_path):
+        if not folder_is_empty(model_path):
             flag_model_exists = True
         else:
             # User has created a new model, train it

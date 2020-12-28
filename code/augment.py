@@ -1,3 +1,8 @@
+"""
+This file contains the data augmentation used in the project
+"""
+
+# Imports
 import numpy as np
 import cv2
 
@@ -23,7 +28,7 @@ MIN_ANGLE = -15
 MAX_ANGLE = 15
 
 
-# ---------- Data augmentation ---------- #
+# ---------- Functions  ---------- #
 
 # Mirroring
 

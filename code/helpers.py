@@ -1,3 +1,8 @@
+"""
+This function contains various helper functions
+"""
+
+# Imports
 import numpy as np
 from os import listdir
 from os.path import isdir as folder_exists
@@ -19,29 +24,10 @@ def folder_is_empty(path):
     """
 
     result = True
+
     if folder_exists(path):
         result = (len(listdir(path)) == 0)
     
-    return result
-
-def model_exists(model_path):
-
-    """
-    Check if a model exists
-    
-    Inputs
-    ----------
-    model_path: string
-        Full path to a keras model
-        
-    Outputs
-    -------
-    result: bool
-        True if model exists, false otherwise
-    """ 
-
-    result = (not folder_is_empty(model_path))
-
     return result
 
 def data_pick_subset(data, indices):
@@ -199,7 +185,8 @@ def web_data_file_names_are_valid(folder_path):
 
     Outputs
     -------
-    top_k_predictions: 
+    result: bool
+        True if valid, False otherwise 
     
     """
 

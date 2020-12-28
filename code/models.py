@@ -1,7 +1,8 @@
-import os
-import numpy as np
-import tensorflow as tf
+"""
+This file contains any Keras model(s) used in the project
+"""
 
+# Imports
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D

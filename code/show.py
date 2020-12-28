@@ -1,14 +1,23 @@
+"""
+This file contains basic data visualization 
+"""
 
+# Custom imports
 from code.helpers import data_pick_subset
 
+# General imports
 import matplotlib.pyplot as plt
 import numpy as np
+
+# ---------- Constants ---------- #
 
 # Prevent a user from showing too many images
 N_SHOW_IMAGES_MAX = 50 
 
 # Prevvent a user from attempting to show too many distributions at once
 N_DISTRIBUTIONS_MAX = 3
+
+# ---------- Functions ---------- #
 
 def show_images(images, titles_top = None, titles_bottom = None, title_fig_window = None, fig_size = (15, 15), font_size = 10, cmap = None, 
                 n_cols_max = 5, titles_bottom_h_align = 'center', titles_bottom_v_align = 'top', titles_bottom_pos = (16, 32)):
@@ -159,3 +168,5 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
         plt.ylabel("Class ID", fontsize = font_size + 14)
 
     plt.show()
+
+

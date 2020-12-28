@@ -1,11 +1,20 @@
+"""
+This file contains the pre-processing used in the project
+"""
+
+# Imports
 import numpy as np
 import cv2
+
+# ---------- Constants ---------- #
 
 # Constants for normalization
 A_NORM = 0
 B_NORM = 1
 IMAGE_MIN = 0
 IMAGE_MAX = 255
+
+# ---------- Functions  ---------- #
 
 def histogram_equalization(images):
     """
