@@ -54,32 +54,29 @@ def data_save_pickled(path, images, labels):
     with open(path, mode = 'wb') as f:   
         pickle.dump(data, f, protocol = pickle.HIGHEST_PROTOCOL)
 
-def data_load_web(path):
+def data_load_web(folder_path):
 
     """
     Load a set of images from a folder into memory
 
     Inputs
     ----------
-    path : string
-        Path to 'images'
+    folder_path : string
+        Path to a folder containing a set of images
     Outputs
     -------
     images: numpy.ndarray
         Array containing 'images'
     """
 
-    file_names = sorted(listdir(path))
+    file_names = sorted(listdir(folder_path))
     images = []
     labels = []
     for file_name in file_names:
-        images.append(mpimg.imread(join(path, file_name)))
+        images.append(mpimg.imread(join(folder_path, file_name)))
         labels.append(int(file_name[:len(file_name) - 4]))
 
     images = np.array(images)
     labels = np.array(labels)
-
-    # Convert from np.float32 to np.uint8
-    #images = (images * 255).round().astype(np.uint8)
 
     return images, labels
