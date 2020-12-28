@@ -262,7 +262,7 @@ def main():
             flag_show_distributions = 'dist' in args.show
             flag_show_predictions = 'pred' in args.show
 
-    if flag_show_predictions:
+    if flag_show_distributions:
         if flag_data_train_loaded:
             order_index = 0
         elif flag_data_test_loaded:
@@ -320,9 +320,10 @@ def main():
 
     if not folder_exists(PATH_MODEL_BASE_FOLDER):
         mkdir(PATH_MODEL_BASE_FOLDER)
-
-    if not folder_exists(model_path):
-        mkdir(model_path)
+        
+    if flag_model_provided:
+        if not folder_exists(model_path):
+            mkdir(model_path)
 
 
     # ---------- Metadata Setup ---------- #
