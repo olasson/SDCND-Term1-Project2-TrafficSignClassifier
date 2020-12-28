@@ -2,7 +2,7 @@ from code.augment import augment_data_by_mirroring, augment_data_by_random_trans
 from code.process import pre_process
 from code.show import show_images, show_label_distributions
 from code.io import data_load_pickled, data_save_pickled, data_load_web
-from code.helpers import images_pick_subset, predictions_create_titles, model_exists, folder_is_empty, dist_is_uniform
+from code.helpers import images_pick_subset, predictions_create_titles, model_exists, folder_is_empty, dist_is_uniform, web_data_file_names_are_valid
 from code.models import LeNet, VGG16
 
 from tensorflow.keras.callbacks import EarlyStopping
@@ -14,7 +14,7 @@ import argparse
 
 from os.path import exists as file_exists
 from os.path import isdir as folder_exists
-from os import mkdir
+from os import mkdir, listdir
 
 # General constants
 N_IMAGES_MAX = 25
@@ -149,6 +149,16 @@ def main():
     )
 
     parser.add_argument(
+        '--model_type',
+        default = 'VGG16',
+        const = 'VGG16',
+        type = str,
+        nargs = '?',
+        choices = ['VGG16', 'LeNet'],
+        help = 'Prepares data for use by a model. Optional: provide augmentation options for the training set.'
+    )
+
+    parser.add_argument(
         '--model_evaluate',
         action = 'store_true',
         help = 'Evaluates the model on the entire (.p) test set.'
@@ -238,12 +248,13 @@ def main():
             flag_show_distributions = 'dist' in args.show
             flag_show_predictions = 'pred' in args.show
 
-    if flag_data_train_loaded:
-        order_index = 0
-    elif flag_data_test_loaded:
-        order_index = 1
-    else:
-        order_index = 2
+    if flag_show_predictions:
+        if flag_data_train_loaded:
+            order_index = 0
+        elif flag_data_test_loaded:
+            order_index = 1
+        else:
+            order_index = 2
 
     
     # ---------- Prepare Setup ---------- #
@@ -264,21 +275,24 @@ def main():
     if model_name:
         flag_model_provided = True
 
-    model_path = PATH_MODEL_BASE_FOLDER + model_name + '/'
+    if flag_model_provided:
+        model_path = PATH_MODEL_BASE_FOLDER + model_name + '/'
+        model_type = args.model_type
 
-    flag_model_evaluate = args.model_evaluate
-
-    # Model hyperparams
-    batch_size = args.batch_size
-    lrn_rate = args.lrn_rate
-    max_epochs = args.max_epochs
+        flag_model_evaluate = args.model_evaluate
 
 
-    if model_exists(model_path):
-        flag_model_exists = True
-    else:
-        # User has created a new model, train it
-        flag_model_train = True
+        # Model hyperparams
+        batch_size = args.batch_size
+        lrn_rate = args.lrn_rate
+        max_epochs = args.max_epochs
+
+
+        if model_exists(model_path):
+            flag_model_exists = True
+        else:
+            # User has created a new model, train it
+            flag_model_train = True
 
     # ---------- Misc Setup ---------- #
 
@@ -303,6 +317,7 @@ def main():
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
     except FileNotFoundError:
         print("Metadata not found!")
+        # The program should handle metadata being 'None' without crashing'
         y_metadata = None
 
 
@@ -311,14 +326,19 @@ def main():
     # Try to catch argument combinations that either:
     # A) Leads to the program crashing
     # B) Causes the program to do nothing, which can be confusing.
-    # The checks listed does NOT form an exhaustive list
+    # The checks listed does NOT form an exhaustive list, and inputs causing A) or B) are possible
     
 
     # User is trying to show images, but no data is loaded
     if not (flag_data_train_loaded or flag_data_valid_loaded or flag_data_test_loaded or flag_data_web_loaded):
         print("ERROR: No data is loaded, nothing can be done without some data!")
         return
-    
+
+    # User has provided incorrectly named file names for the web data
+    # Note: This does not catch incorrect image dimensions, but loading will crash
+    if flag_data_web_loaded and (not web_data_file_names_are_valid(path_web)):
+        print("ERROR: main(): Images located in ", path_web, 'are incorrectly named!')
+        return
 
     if not flag_model_provided:
 
@@ -330,7 +350,7 @@ def main():
     if flag_model_provided:
 
         # User has provided a model and requested training, but no training or validation data is loaded
-        if (flag_model_train or flag_force_save) and not (flag_data_train_loaded or flag_data_valid_loaded):
+        if (flag_model_train or flag_force_save) and not (flag_data_train_loaded and flag_data_valid_loaded):
             print("ERROR: main(): You are trying to train your model, but no training and validation data is loaded!")
             return
 
@@ -375,9 +395,9 @@ def main():
 
     if not folder_is_empty(path_web):
         print("Loading web data...")
-        X_web = data_load_web(path_web)
+        X_web, y_web = data_load_web(path_web)
     else:
-        X_web = None
+        X_web, y_web = None, None
 
     # ---------- Post Load ---------- #
 
@@ -502,7 +522,11 @@ def main():
 
     if flag_model_provided:
 
-        model = VGG16()
+        if model_type == 'VGG16':
+            model = VGG16()
+        else:
+            model = LeNet()
+
         optimizer = Adam(learning_rate = lrn_rate)
 
         # flag_force_save: User has the option to force a new training session, even if the model exists 
@@ -556,17 +580,33 @@ def main():
 
                 indices = np.random.randint(0, n_images, min(n_images, N_PREDICTIONS_MAX))
 
-                y_pred = predictions_create_titles(predictions_test, y_test, y_metadata, indices)
+                if y_metadata is not None:
+                    y_pred = predictions_create_titles(predictions_test, y_metadata, indices)
+                else:
+                    y_pred = predictions_create_titles(predictions_test, y_test, indices)
+
                 X_pred, _, _ = images_pick_subset(X_test_raw, indices = indices, n_images_max = N_IMAGES_MAX)
 
-                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Testing set predictions', 
+                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Testing set predictions by_' + model_name, 
                             font_size = 12, n_cols_max = 3, titles_bottom_h_align = 'left', titles_bottom_pos = (34, 7.0))
 
             if flag_data_web_loaded:
                 print("Showing web predictions for", model_name, "...")
-                # TODO: Web predictions
+                
+                X_web_raw, y_web = data_load_web(path_web)
 
-            
+                X_web = pre_process(X_web_raw)
 
+                predictions_test = model.predict(X_web)
+
+                if y_metadata is not None:
+                    y_pred = predictions_create_titles(predictions_test, y_metadata, indices = None, n_images_max = N_IMAGES_MAX)
+                else:
+                    y_pred = predictions_create_titles(predictions_test, y_web, indices = None, n_images_max = N_IMAGES_MAX)
+
+                X_pred = X_web_raw[:min(len(X_web_raw), N_IMAGES_MAX)]
+
+                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Web set predictions by_' + model_name, 
+                            font_size = 12, n_cols_max = 3, titles_bottom_h_align = 'left', titles_bottom_pos = (34, 7.0))
 
 main()
