@@ -463,13 +463,27 @@ def main():
 
     if flag_show_distributions:
 
-        title = ''
+        # Generate title automatically
+
         if flag_data_train_loaded:
-            title += "| Training set (Blue) | "
+            title_train = '| Training set (Blue)'
+        else:
+            title_train = ''
+
         if flag_data_test_loaded:
-            title += "| Testing set (Orange) |"
+            title_test = ' | Testing set (Orange) | '
+        else:
+            title_test = ''
+
         if flag_data_valid_loaded:
-            title += "| Validation set (Green) |"
+            title_valid = 'Validation set (Green) |'
+        else:
+            title_valid = ''
+
+        if not title_test:
+            title = title_train + ' | ' + title_valid
+        else:
+            title = title_train + title_test + title_valid
 
         show_label_distributions([y_train, y_test, y_valid], y_metadata, title = title, order_index = order_index, colors = COLORS)
 
