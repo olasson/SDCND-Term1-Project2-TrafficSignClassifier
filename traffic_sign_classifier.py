@@ -8,7 +8,7 @@ It contains an implementation of a (very) basic command line tool
 from code.helpers import images_pick_subset, predictions_create_titles, folder_is_empty, dist_is_uniform, web_data_file_names_are_valid
 from code.augment import augment_data_by_mirroring, augment_data_by_random_transform
 from code.io import data_load_pickled, data_save_pickled, data_load_web
-from code.show import show_images, show_label_distributions
+from code.show import show_images, show_label_distributions, plot_model_history
 from code.models import LeNet, VGG16
 from code.process import pre_process
 
@@ -26,7 +26,7 @@ from os.path import exists as file_exists
 from os.path import isdir as folder_exists
 from os import mkdir, listdir
 
-# ---------- Constants ---------- #
+# ---------- Config ---------- #
 
 # General constants
 N_IMAGES_MAX = 25
@@ -49,13 +49,17 @@ PATH_PREPARED_VALID = PATH_PREPARED_FOLDER + 'prepared_valid.p'
 PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 
 # Model
-PATH_MODEL_BASE_FOLDER = './models/'
+PATH_MODEL_FOLDER = './models/'
 MODEL_LOSS = 'sparse_categorical_crossentropy'
 MODEL_METRICS = ['accuracy']
 MODEL_TRAINING_PATIENCE = 3
 MODEL_TRAINING_MODE = 'max'
 MODEL_TRAINING_METRIC = 'val_accuracy'
 MODEL_TRAINING_MIN_DELTA = 0.001
+
+# Images
+PATH_IMAGES = './images/'
+PATH_IMAGES_README = PATH_IMAGES + 'readme/'
 
 
 # Mapping where "Class i" is mirrored to imitate "Class MIRROR_MAP[i]"
@@ -87,11 +91,19 @@ def main():
 
     # ---------- Constant Folder Setup ---------- #
 
+    # The program expects these folders to exist
+
     if not folder_exists(PATH_PREPARED_FOLDER):
         mkdir(PATH_PREPARED_FOLDER)
 
-    if not folder_exists(PATH_MODEL_BASE_FOLDER):
-        mkdir(PATH_MODEL_BASE_FOLDER)
+    if not folder_exists(PATH_MODEL_FOLDER):
+        mkdir(PATH_MODEL_FOLDER)
+
+    if not folder_exists(PATH_IMAGES):
+        mkdir(PATH_IMAGES)
+
+    if not folder_exists(PATH_IMAGES_README):
+        mkdir(PATH_IMAGES_README)
 
     # ---------- Command line arguments ---------- #
 
@@ -295,7 +307,7 @@ def main():
         flag_model_provided = True
 
     if flag_model_provided:
-        model_path = PATH_MODEL_BASE_FOLDER + model_name + '/'
+        model_path = PATH_MODEL_FOLDER + model_name + '/'
         model_type = args.model_type
 
         flag_model_evaluate = args.model_evaluate
@@ -308,6 +320,7 @@ def main():
 
 
         if not folder_is_empty(model_path):
+            # The model already exist, no need to train
             flag_model_exists = True
         else:
             # User has created a new model, train it
@@ -328,7 +341,7 @@ def main():
         y_metadata = read_csv(PATH_METADATA)[KEY_METADATA]
     except FileNotFoundError:
         print("Metadata not found!")
-        # The program should handle metadata being 'None' without crashing'
+        # The program should handle metadata being 'None' without crashing
         y_metadata = None
 
 
@@ -548,11 +561,15 @@ def main():
             early_stopping = EarlyStopping(monitor = MODEL_TRAINING_METRIC, 
                                            patience = MODEL_TRAINING_PATIENCE, min_delta = MODEL_TRAINING_MIN_DELTA, 
                                            mode = MODEL_TRAINING_MODE, restore_best_weights = True)
-            model.fit(X_train, y_train, batch_size = batch_size, epochs = max_epochs, 
+            history = model.fit(X_train, y_train, batch_size = batch_size, epochs = max_epochs, 
                         validation_data = (X_valid, y_valid), callbacks = [early_stopping])
+
+
 
             print("Saving", model_name, "...")
             model.save_weights(model_path)
+
+            plot_model_history(model_name, history, PATH_IMAGES_README, lrn_rate, batch_size, max_epochs)
 
             flag_model_is_loaded = True
 
