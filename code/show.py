@@ -8,6 +8,7 @@ from code.helpers import data_pick_subset
 # General imports
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # ---------- Constants ---------- #
 
@@ -169,4 +170,95 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
 
     plt.show()
 
+def plot_model_history(model_name, history, path_save = None, lrn_rate = None, batch_size = None, max_epochs = None):
+    """
+    Plot model history and metadata
+    
+    Inputs
+    ----------
+    model_name: string
+        Name of the model
+    history: Keras History Object
+        Model history (output from .fit)
+    path_save: (None | string)
+        Path to where the plot will be saved. 
+    lrn_rate: (None | float)
+        Model learning rate
+    batch_size: (None | int)
+        Model batch size
+    max_epochs: (None | int)
+        Model max epochs 
+        
+    Outputs
+    -------
+    plt.figure
+        Figure showing model history and metadata, either shown directly or saved in location 'path_save'
+    
+    """
 
+    train_log = history.history['loss']
+    valid_log = history.history['val_loss']
+    
+    train_loss = train_log[-1]
+    valid_loss = valid_log[-1]
+    
+    text = "Training/Validation Loss: " + str(round(train_loss, 3)) + '/' + str(round(valid_loss, 3))   
+    
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    
+    c1 = colors[0]
+    c2 = colors[1]
+    
+    fig, ax1 = plt.subplots(figsize = (9, 6))
+    
+    ax1.set_xlabel('Epochs')    
+    ax1.set_ylabel('Loss')
+
+    x = np.arange(1, len(train_log) + 1)
+    
+    ax1.plot(x, train_log, label = 'Train Loss', color = c1)
+    ax1.plot(x, valid_log, label = 'Validation Loss', color = c2)
+
+
+    stopping_epoch = len(history.history['loss'])
+
+    # ---------- Construct a title for the plot ---------- # 
+
+    model_name_title = 'Model Name: '+ model_name + ' | '
+
+    if lrn_rate is not None:
+        lrn_rate_title = 'Lrn rate: ' + str(lrn_rate) + ' | '
+    else:
+        lrn_rate_title = ''
+
+    if batch_size is not None:
+        batch_size_title = 'Batch size: ' + str(batch_size) + ' | '
+    else:
+        batch_size_title = ''
+
+    if max_epochs is not None:
+        epochs_title = 'Stopp/Max (Epoch): ' + str(stopping_epoch) + '/' + str(max_epochs)
+    else:
+        epochs_title = 'Stopp Epoch: ' + str(stopping_epoch)
+
+    plt.title(model_name_title + lrn_rate_title + batch_size_title + epochs_title)
+
+    # ---------- Misc ---------- #
+    
+    fig.text(0.5, 0, text,
+                verticalalignment = 'top', 
+                horizontalalignment = 'center',
+                color = 'black', fontsize = 10)
+    
+    handles, labels = ax1.get_legend_handles_labels()
+    
+    fig.legend(handles, labels, loc = (0.7, 0.5))
+    fig.tight_layout()
+
+    # ---------- Show or save ---------- #
+    
+    # If the user has opted to save the model history, don't show the plot directly
+    if path_save is not None:
+        fig.savefig(os.path.join(path_save, model_name), bbox_inches = 'tight')
+    else:
+        plt.show()
