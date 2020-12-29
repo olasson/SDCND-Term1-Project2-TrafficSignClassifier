@@ -52,7 +52,7 @@ PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 PATH_MODEL_FOLDER = './models/'
 MODEL_LOSS = 'sparse_categorical_crossentropy'
 MODEL_METRICS = ['accuracy']
-MODEL_TRAINING_PATIENCE = 3
+MODEL_TRAINING_PATIENCE = 5
 MODEL_TRAINING_MODE = 'max'
 MODEL_TRAINING_METRIC = 'val_accuracy'
 MODEL_TRAINING_MIN_DELTA = 0.001
@@ -639,7 +639,7 @@ def main():
 
                 X_pred = X_web_raw[:min(len(X_web_raw), N_PREDICTIONS_MAX)]
 
-                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Web set predictions by: ' + model_name, fig_size = (15, 10), 
+                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Web set predictions by: ' + model_name, fig_size = (10, 10), 
                             font_size = 12, n_cols_max = 3, titles_bottom_h_align = 'left', titles_bottom_pos = (34, 7.0))
 
 main()
