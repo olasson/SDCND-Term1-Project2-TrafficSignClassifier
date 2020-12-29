@@ -597,8 +597,9 @@ def main():
 
                 flag_model_is_loaded = True
 
-            print("Evaluating", model_name, "...")
+            
             model.evaluate(X_test, y_test, batch_size = batch_size)
+            print("Done evaluating", model_name, "!")
 
         if flag_show_predictions:
 
