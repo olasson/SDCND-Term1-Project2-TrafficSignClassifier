@@ -48,9 +48,6 @@ PATH_PREPARED_TRAIN = PATH_PREPARED_FOLDER + 'prepared_train.p'
 PATH_PREPARED_VALID = PATH_PREPARED_FOLDER + 'prepared_valid.p'
 PATH_PREPARED_TEST = PATH_PREPARED_FOLDER + 'prepared_test.p'
 
-# Web data
-PATH_WEB_FOLDER = './images/web/'
-
 # Model
 PATH_MODEL_BASE_FOLDER = './models/'
 MODEL_LOSS = 'sparse_categorical_crossentropy'
@@ -177,7 +174,7 @@ def main():
         type = str,
         nargs = '?',
         choices = ['VGG16', 'LeNet'],
-        help = 'Prepares data for use by a model. Optional: provide augmentation options for the training set.'
+        help = 'Choose a model type/architecture.'
     )
 
     parser.add_argument(
@@ -415,7 +412,7 @@ def main():
 
     # ---------- Post Load ---------- #
 
-    if flag_data_train_loaded:
+    if flag_data_train_loaded and flag_show_distributions:
         # If the user has loaded a uniform training set (can happen if y_train has undergone augmentation), 
         # use a different set for the order index, otherwise, the plot will appear unstructured and messy
         if dist_is_uniform(y_train):
@@ -599,9 +596,9 @@ def main():
                 else:
                     y_pred = predictions_create_titles(predictions_test, y_test, indices)
 
-                X_pred, _, _ = images_pick_subset(X_test_raw, indices = indices, n_images_max = N_IMAGES_MAX)
+                X_pred, _, _ = images_pick_subset(X_test_raw, indices = indices, n_images_max = N_PREDICTIONS_MAX)
 
-                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Testing set predictions by_' + model_name, 
+                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Testing set predictions by: ' + model_name, 
                             font_size = 12, n_cols_max = 3, titles_bottom_h_align = 'left', titles_bottom_pos = (34, 7.0))
 
             if flag_data_web_loaded:
@@ -614,13 +611,13 @@ def main():
                 predictions_test = model.predict(X_web)
 
                 if y_metadata is not None:
-                    y_pred = predictions_create_titles(predictions_test, y_metadata, indices = None, n_images_max = N_IMAGES_MAX)
+                    y_pred = predictions_create_titles(predictions_test, y_metadata, indices = None, n_images_max = N_PREDICTIONS_MAX)
                 else:
-                    y_pred = predictions_create_titles(predictions_test, y_web, indices = None, n_images_max = N_IMAGES_MAX)
+                    y_pred = predictions_create_titles(predictions_test, y_web, indices = None, n_images_max = N_PREDICTIONS_MAX)
 
-                X_pred = X_web_raw[:min(len(X_web_raw), N_IMAGES_MAX)]
+                X_pred = X_web_raw[:min(len(X_web_raw), N_PREDICTIONS_MAX)]
 
-                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Web set predictions by_' + model_name, 
+                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Web set predictions by: ' + model_name, 
                             font_size = 12, n_cols_max = 3, titles_bottom_h_align = 'left', titles_bottom_pos = (34, 7.0))
 
 main()
