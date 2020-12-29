@@ -71,7 +71,6 @@ def show_images(images, titles_top = None, titles_bottom = None, title_fig_windo
 
     fig = plt.figure(title_fig_window, figsize = fig_size)
 
-
     for i in range(n_images):
         plt.subplot(n_rows, n_cols, i + 1)
         plt.imshow(images[i], cmap = cmap)
