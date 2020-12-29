@@ -203,11 +203,3 @@ def web_data_file_names_are_valid(folder_path):
             break
 
     return result
-
-
-
-
-
-
-
-    

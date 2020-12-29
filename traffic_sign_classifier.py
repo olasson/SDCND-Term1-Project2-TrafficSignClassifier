@@ -57,10 +57,6 @@ MODEL_TRAINING_MODE = 'max'
 MODEL_TRAINING_METRIC = 'val_accuracy'
 MODEL_TRAINING_MIN_DELTA = 0.001
 
-# Images
-PATH_IMAGES = './images/'
-PATH_IMAGES_README = PATH_IMAGES + 'readme/'
-
 
 # Mapping where "Class i" is mirrored to imitate "Class MIRROR_MAP[i]"
 # Used by data augmentation
@@ -98,12 +94,6 @@ def main():
 
     if not folder_exists(PATH_MODEL_FOLDER):
         mkdir(PATH_MODEL_FOLDER)
-
-    if not folder_exists(PATH_IMAGES):
-        mkdir(PATH_IMAGES)
-
-    if not folder_exists(PATH_IMAGES_README):
-        mkdir(PATH_IMAGES_README)
 
     # ---------- Command line arguments ---------- #
 
@@ -649,7 +639,7 @@ def main():
 
                 X_pred = X_web_raw[:min(len(X_web_raw), N_PREDICTIONS_MAX)]
 
-                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Web set predictions by: ' + model_name, 
+                show_images(X_pred, titles_bottom = y_pred, title_fig_window = 'Web set predictions by: ' + model_name, fig_size = (15, 10), 
                             font_size = 12, n_cols_max = 3, titles_bottom_h_align = 'left', titles_bottom_pos = (34, 7.0))
 
 main()
