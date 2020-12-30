@@ -20,11 +20,11 @@ The majority of the project code is located in the folder `code`:
 The main project script is called [`traffic_sign_classifier.py`](https://github.com/olasson/SDCND-Term1-Project1-DetectLaneLines/blob/master/traffic_sign_classifier.py). It contains the implementation of a very simple command line tool.
 
 The results of model training and predictions are found in:
-* `images
+* `images/`
 
 The images shown in this readme are found in 
 
-* `images`
+* `images/`
 
 ## Command line arguments
 
@@ -45,6 +45,32 @@ The following command line arguments are defined:
 While all arguments are technically optional, it will not run if no data is provided. The program also checks for "illegal" argument combinations to an extent, and performs some basic "pre-flight" checks.
 
 ## Data Exploration
+
+Below is a very basic data overview.
+
+| Dataset   |      # Images      |  # Unique Classes |  Shape |
+|----------|:-------------:|------:|------:|
+| `train.p` |  34799 | 43 | (32,32,3) |
+| `valid.p` |  4410 | 43 | (32,32,3) |
+| `test.p` |  12630 | 43 | (32,32,3) |
+
+Next, lets take a look at a random subset of training images. See the `images/` folder for validation and testing images. 
+
+Command: `--data_train './data/train.p' --show 'images'`
+
+<p align="center">
+  <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/rand_images_train.png">
+</p>
+
+*Observation* The images have uneven brightness. This should be corrected for in the pre processing step. 
+
+Next, lets compare the class distributions
+
+<p align="center">
+  <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/raw_dist_comp.png">
+</p>
+
+*Observation 2:* Certain image classes can be mirrored to imitate other classes. For example, "Turn Left Ahead" can be mirroried to imitate "Turn Right Ahead".
 
 ## Data Preparation
 
