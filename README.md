@@ -42,4 +42,23 @@ The following command line arguments are defined:
 * `--batch_size:` Model batch size. Default: `64`.
 * `--force_save:` Override existing prepared data and/or models. Default: `False`.
 
-While all arguments are techincally optional, it will not run if no data is provided. The program also checks for "illegal" argument combinations to an extent. 
+While all arguments are technically optional, it will not run if no data is provided. The program also checks for "illegal" argument combinations to an extent, and performs some basic "pre-flight" checks.
+
+## Data Exploration
+
+## Data Preparation
+
+### Augmentation
+
+### Pre-processing
+
+## Models
+
+### VGG16
+
+### LeNet
+
+## Results
+
+## Project Shortcomings
+
