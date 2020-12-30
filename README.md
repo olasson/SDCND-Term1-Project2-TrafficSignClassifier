@@ -66,7 +66,9 @@ Command: `--data_train './data/train.p' --show 'images'`
 
 Next, lets compare the class distributions (click on image to enlarge). 
 
-Command: `--data_train './data/train.p' --data_valid './data/valid.p' --data_test './data/test.p' --show 'dist'`
+Command: 
+
+`--data_train './data/train.p' --data_valid './data/valid.p' --data_test './data/test.p' --show 'dist'`
 
 <p align="center">
   <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/raw_dist_comp.png">
@@ -77,6 +79,10 @@ Command: `--data_train './data/train.p' --data_valid './data/valid.p' --data_tes
 ## Data Preparation
 
 This section is concerned with preparing the datasets for use by a model.
+
+The command used for creating the "prepared" datasets:
+
+ `--data_train './data/train.p' --data_valid './data/valid.p' --data_test './data/test.p' --prepare 'mirroring' 'rand_tf'`
 
 ### Augmentation
 
@@ -109,7 +115,9 @@ All transformations preserve the original image dimensions. One or more of these
 
 For this project, I only applied agumentation to `train.p`. Lets take a look at the distribution after augmentation. 
 
-Command: `--data_train './data/prepared_train.p' --data_valid './data/prepared_valid.p' --data_test './data/prepared_test.p' --show 'dist'`
+Command: 
+
+`--data_train './data/prepared_train.p' --data_valid './data/prepared_valid.p' --data_test './data/prepared_test.p' --show 'dist'`
 
 <p align="center">
   <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/prepared_dist_comp.png">
@@ -134,6 +142,10 @@ In order to lighten the computation load, grayscale conversion is applied by `gr
 In order to ensure a set range of values the model has to learn, and in turn (hopefully) cause faster optimizer convergence, normalization is applied by `normalize()`.
 
 ## Models
+
+This section defines the models used in the project. 
+
+Relevant code: `code/models.py`
 
 ### VGG16
 
