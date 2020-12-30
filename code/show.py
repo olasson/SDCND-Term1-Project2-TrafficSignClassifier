@@ -132,7 +132,7 @@ def show_label_distributions(distributions, labels_metadata = None, order_index 
     classes, classes_count_order = np.unique(distributions[order_index], return_counts = True)
 
     # Ensure that the order of classes fits a reverse sort of 'classes_count_order'
-    # 'classes_1' determines the order of classes on the y-axis
+    # 'classes_order' determines the order of classes on the y-axis
     classes_order = [tmp for _,tmp in sorted(zip(classes_count_order, classes), reverse  = True)]
 
     # Perform a reverse sort of 'classes_order'
