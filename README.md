@@ -300,6 +300,15 @@ This will prevent the training from running while no "meaningful" improvement in
 
 ## Results
 
+A simple naming standard was devised to differentiate the models: `<model_type>_<lrn_rate_decimals>_<batch_size>`. As an example, `VGG16_001_64` reads as *A VGG16 model trained with (lrn_rate = 0.001)  and (batch_size = 64)*. I left `max_epochs = 50` for the entire project and for all models. 
+
+In terms of the command line tool there is one important difference. Since `VGG16` is the default, it is necessary to specify the model type for LeNet. 
+
+* `(...) --model_name  'VGG16_001_64' ` (Sufficient)
+* `(...) --model_name  'LeNet_001_64' --model_type 'LeNet' ` (Sufficient)
+
+Below is the results for all models trained. 
+
 | Model Name    | Stop Epoch/Max Epoch  | Training Loss | Validation Loss  | Testing Set accuracy |  
 | :---        |    :----:   |          ---: |          ---: |         ---: |
 | `VGG16_0001_128`   |    32/50  |  0.2020 |  0.1280 |  0.9430 |
@@ -309,6 +318,30 @@ This will prevent the training from running while no "meaningful" improvement in
 | `LeNet_001_64`   |    20/50  |  0.0490 |  0.177 |  0.9549 |
 | `LeNet_01_32`   |    6/50  |  1.1210 |  0.8620 | 0.7914  |
 
+Plots for all models can be found in the `images/` folder. 
+
+Overall, the model with the best performance seems to be `VGG16_001_64`.
+
+The command line tool support visualizing a subset of the test set predictions. 
+
+Command: 
+
+* `--data_test'./data/prepared_test.p/' --model_name  'VGG16_001_64' --show 'pred' `
+
+<p align="center">
+  <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/VGG16_001_64_pred_test.png">
+</p>
+
+
+
+
+Some random images was downloaded from the web, prepared and fed to the model. 
+
+* `--data_web './data/images/' --model_name  'VGG16_001_64' --show 'pred' `
+
+<p align="center">
+  <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/VGG16_001_64_pred_web.png">
+</p>
 
 ## Project Shortcomings
 
