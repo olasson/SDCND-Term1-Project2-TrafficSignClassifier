@@ -280,6 +280,24 @@ All activation layers are of type `relu`, except for `activation_4` which is `so
 
 ### Training
 
+The user has the option to specify a couple of hyperparameters through the command line namely `lrn_rate`, `batch_size` and `max_epochs`. While the first two are fairly stright forward, `max_epochs` is, as the name implies, not necessarily the number of epochs training will run for. This is due to the Keras callback implemented like so
+
+    MODEL_TRAINING_PATIENCE = 5
+    MODEL_TRAINING_MODE = 'max'
+    MODEL_TRAINING_METRIC = 'val_accuracy'
+    MODEL_TRAINING_MIN_DELTA = 0.001
+    
+    ...
+    
+    early_stopping = EarlyStopping(monitor = MODEL_TRAINING_METRIC, 
+                                   patience = MODEL_TRAINING_PATIENCE, min_delta = MODEL_TRAINING_MIN_DELTA, 
+                                   mode = MODEL_TRAINING_MODE, restore_best_weights = True)
+
+ 
+In plain english, this callback does the following: *Stop the traning if there has not been a `min_delta` improvement in the metric `monitor` for `patience` epochs.* With the specified values: *Stop the traning if there has not been a `0.001` improvement in the metric `val_accuracy` for `5` epochs.*
+
+This will prevent the training for running while no "meaningful" improvement in accuracy is achieved. It is worth noting that this in no way guarantees the best training. 
+
 ## Results
 
 | Model Name    | Stop Epoch/User Epoch  | Validation accuracy | Test set accuracy  |
