@@ -296,14 +296,19 @@ The user has the option to specify a couple of hyperparameters through the comma
  
 In plain english, this callback does the following: *Stop the traning if there has not been a `min_delta` improvement in the metric `monitor` for `patience` epochs.* With the specified values: *Stop the traning if there has not been a `0.001` improvement in the metric `val_accuracy` for `5` epochs.*
 
-This will prevent the training for running while no "meaningful" improvement in accuracy is achieved. It is worth noting that this in no way guarantees the best training. 
+This will prevent the training from running while no "meaningful" improvement in accuracy is achieved. It is worth noting that this in no way guarantees the best training. 
 
 ## Results
 
-| Model Name    | Stop Epoch/User Epoch  | Validation accuracy | Test set accuracy  |
-| :---        |    :----:   |          ---: |          ---: |
-| `LeNet_50_16`      | 17/50      | 0.9560   | 0.8850   |
-| `VGG16_50_16`   | 21/50        | 0.9780      | 0.9510      |
+| Model Name    | Stop Epoch/Max Epoch  | Training Loss | Validation Loss  | Testing Set accuracy |  
+| :---        |    :----:   |          ---: |          ---: |         ---: |
+| `VGG16_0001_128`   |    32/50  |  0.2020 |  0.1280 |  0.9430 |
+| `VGG16_001_64`   |    16/50  |  0.0630 |  0.057 |  0.9710 |
+| `VGG16_01_32`   |    14/50  |  0.1340 |  0.0870 |  0.9629 |
+| `LeNet_0001_128`   |    45/50  |  0.2300 |  0.1520 |  0.9284 |
+| `LeNet_001_64`   |    20/50  |  0.0490 |  0.177 |  0.9549 |
+| `LeNet_01_32`   |    6/50  |  1.1210 |  0.8620 | 0.7914  |
+
 
 ## Project Shortcomings
 
