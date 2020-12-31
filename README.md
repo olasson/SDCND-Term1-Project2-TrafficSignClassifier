@@ -294,7 +294,7 @@ The user has the option to specify a couple of hyperparameters through the comma
                                    mode = MODEL_TRAINING_MODE, restore_best_weights = True)
 
  
-In plain english, this callback does the following: *Stop the traning if there has not been a `min_delta` improvement in the metric `monitor` for `patience` epochs.* With the specified values: *Stop the traning if there has not been a `0.001` improvement in the metric `val_accuracy` for `5` epochs.*
+In plain english, this callback does the following: *Stop the traning if there has not been at least a `min_delta` improvement in the metric `monitor` for `patience` epochs.* With the specified values: *Stop the traning if there has not been at least a `0.001` improvement in the metric `val_accuracy` for `5` epochs.*
 
 This will prevent the training from running while no "meaningful" improvement in accuracy is achieved. It is worth noting that this in no way guarantees the best training. 
 
