@@ -322,26 +322,24 @@ Plots for all models can be found in the `images/` folder.
 
 Overall, the model with the best performance seems to be `VGG16_001_64`.
 
-The command line tool support visualizing a subset of the test set predictions. 
+The command line tool support visualizing a subset of the test set predictions. It will show max 15 predictions, with the top 5 probabilities for each image. 
 
-Command: 
-
-* `--data_test'./data/prepared_test.p/' --model_name  'VGG16_001_64' --show 'pred' `
+Command:  `--data_test'./data/prepared_test.p/' --model_name  'VGG16_001_64' --show 'pred' `
 
 <p align="center">
   <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/VGG16_001_64_pred_test.png">
 </p>
 
 
+Some random images was downloaded from the web, prepared and fed to the model. They werre cropped to 32x32. 
 
-
-Some random images was downloaded from the web, prepared and fed to the model. 
-
-* `--data_web './data/images/' --model_name  'VGG16_001_64' --show 'pred' `
+Command: `--data_web './data/images/' --model_name  'VGG16_001_64' --show 'pred' `
 
 <p align="center">
   <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/VGG16_001_64_pred_web.png">
 </p>
 
-## Project Shortcomings
+The model works quite well on the web images. The high confidence seems to indicate that the model has generalized well to new images. 
+
+
 
