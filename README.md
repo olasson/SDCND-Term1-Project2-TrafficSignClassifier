@@ -113,6 +113,10 @@ By applying one or more (up to four) random transformations, new images can be c
 
 All transformations preserve the original image dimensions. One or more of these is applied by `random_transforms()` which in turn is called by `augment_data_by_random_transform()`. It will apply random transformation to each class until a target count for each class is reached. 
 
+<p align="center">
+  <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/random_transforms.png">
+</p>
+
 For this project, I only applied agumentation to `train.p`. Lets take a look at the distribution after augmentation. 
 
 Command: 
@@ -133,6 +137,12 @@ Relevant code: `code/process.py`
 
 In order to combat uneven brightness, histogram equalization (CLAHE) is applied by `histogram_equalization()`. 
 
+<p align="center">
+  <img width="80%" height="80%" src="https://github.com/olasson/SDCND-Term1-Project2-TrafficSignClassifier/blob/master/images/preproc_hist_eq.png">
+</p>
+
+The brightness of the images in the bottom row is more equal. Hopefully this will allow the model to focus more on the physical features of the signs, and less on the brightness. 
+
 #### Grayscale
 
 In order to lighten the computation load, grayscale conversion is applied by `grayscale()`. 
@@ -150,6 +160,8 @@ Relevant code: `code/models.py`
 ### VGG16
 
 ### LeNet
+
+### Training
 
 ## Results
 
